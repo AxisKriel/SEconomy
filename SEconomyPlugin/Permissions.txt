@@ -1,0 +1,12 @@
+﻿Permissions
+
+	* bank.viewothers: Has permission to view other people's account balances
+	* bank.modifyothers: Has permission to enable/disable, lock accounts to world etc.
+	* bank.worldtransfer: Has permission to pay players from the world account
+	* bank.transfer: Has permission to transfer to other players
+	* bank.resetbal: Has permission to reset another player's account balance.
+
+	* seconomy.world.bypassdeathpenalty: Has permission to bypass the death penalty
+	
+	* aliascmd.bypasscooldown: May bypass cooldowns on alias commands
+	* aliascmd.reloadconfig: Has permission to reload the alliascmd config filed
