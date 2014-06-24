@@ -1,0 +1,3 @@
+[submodule "References/TShock"]
+	path = References/TShock
+	url = https://github.com/NyxStudios/TShock

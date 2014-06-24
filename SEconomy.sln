@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TShockAPI", "..\..\Jist\References\TShock\TShockAPI\TShockAPI.csproj", "{49606449-072B-4CF5-8088-AA49DA586694}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TerrariaAPI-Server", "..\..\Jist\References\TShock\TerrariaServerAPI\TerrariaAPI-Server.csproj", "{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "References", "References", "{FF3D5A1B-002B-4675-93BD-0156BD6F11C5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49606449-072B-4CF5-8088-AA49DA586694}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49606449-072B-4CF5-8088-AA49DA586694}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49606449-072B-4CF5-8088-AA49DA586694}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{49606449-072B-4CF5-8088-AA49DA586694}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49606449-072B-4CF5-8088-AA49DA586694}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49606449-072B-4CF5-8088-AA49DA586694}.Release|x86.ActiveCfg = Release|Any CPU
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Debug|x86.ActiveCfg = Debug|x86
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Debug|x86.Build.0 = Debug|x86
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Release|Any CPU.Build.0 = Release|Any CPU
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Release|x86.ActiveCfg = Release|x86
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{49606449-072B-4CF5-8088-AA49DA586694} = {FF3D5A1B-002B-4675-93BD-0156BD6F11C5}
+		{549A7941-D9C9-4544-BAC8-D9EEEAB4D777} = {FF3D5A1B-002B-4675-93BD-0156BD6F11C5}
+	EndGlobalSection
+EndGlobal
