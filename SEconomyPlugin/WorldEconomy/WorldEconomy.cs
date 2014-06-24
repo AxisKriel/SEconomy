@@ -10,54 +10,71 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
     /// <summary>
     /// World economy. Provides monetary gain and loss as a result of interaction in the world, including mobs and players
     /// </summary>
-    public class WorldEconomy {
+    public class WorldEconomy : IDisposable {
+		protected SEconomy Engine { get; set; }
 
         /// <summary>
         /// Format for this dictionary:
         /// Key: NPC
         /// Value: A list of players who have done damage to the NPC
         /// </summary>
-        static volatile Dictionary<Terraria.NPC, List<PlayerDamage>> DamageDictionary = new Dictionary<Terraria.NPC, List<PlayerDamage>>();
+        protected Dictionary<Terraria.NPC, List<PlayerDamage>> DamageDictionary = new Dictionary<Terraria.NPC, List<PlayerDamage>>();
 
         /// <summary>
         /// Format for this dictionary:
         /// * key: Player ID
         /// * value: Last player hit ID
         /// </summary>
-        static volatile Dictionary<int, int> PVPDamage = new Dictionary<int, int>();
+        protected Dictionary<int, int> PVPDamage = new Dictionary<int, int>();
 
         /// <summary>
         /// synch object for access to the dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
         /// </summary>
-        static readonly object __dictionaryLock = new object();
+        protected readonly object __dictionaryLock = new object();
 
         /// <summary>
         /// synch object for access to the pvp dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
         /// </summary>
-        static readonly object __pvpLock = new object();
+		protected readonly object __pvpLock = new object();
 
         /// <summary>
         /// Synch object for access to the packet handler critical sections, forcing packets to be marshalled in a serialized manner.
         /// </summary>
-        static readonly object __packetHandlerMutex = new object();
+        protected readonly object __packetHandlerMutex = new object();
 
         /// <summary>
         /// World configuration node, from TShock\SEconomy\SEconomy.WorldConfig.json
         /// </summary>
-        public static Configuration.WorldConfiguration.WorldConfig WorldConfiguration { get; private set; }
+        public Configuration.WorldConfiguration.WorldConfig WorldConfiguration { get; private set; }
 
-        /// <summary>
-        /// Initializes the world economy interface
-        /// </summary>
-        public static void InitializeWorldEconomy() {
-            WorldConfiguration = Configuration.WorldConfiguration.WorldConfig.LoadConfigurationFromFile("tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "SEconomy.WorldConfig.json");
 
-            ServerApi.Hooks.NetGetData.Register(SEconomyPlugin.Instance, NetHooks_GetData);
-            ServerApi.Hooks.NetSendData.Register(SEconomyPlugin.Instance, NetHooks_SendData);
-            ServerApi.Hooks.GameUpdate.Register(SEconomyPlugin.Instance, Game_Update);
-        }
+		public WorldEconomy(SEconomy parent)
+		{
+			this.WorldConfiguration = Configuration.WorldConfiguration.WorldConfig.LoadConfigurationFromFile("tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "SEconomy.WorldConfig.json");
+			this.Engine = parent;
 
-        private static void Game_Update(EventArgs args) {
+			ServerApi.Hooks.NetGetData.Register(Engine.PluginInstance, NetHooks_GetData);
+			ServerApi.Hooks.NetSendData.Register(Engine.PluginInstance, NetHooks_SendData);
+			ServerApi.Hooks.GameUpdate.Register(Engine.PluginInstance, Game_Update);
+		}
+
+		public void Dispose()
+		{
+			this.Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing) {
+				ServerApi.Hooks.NetGetData.Deregister(Engine.PluginInstance, NetHooks_GetData);
+				ServerApi.Hooks.NetSendData.Deregister(Engine.PluginInstance, NetHooks_SendData);
+				ServerApi.Hooks.GameUpdate.Deregister(Engine.PluginInstance, Game_Update);
+			}
+		}
+
+
+        protected void Game_Update(EventArgs args) {
             foreach (Terraria.NPC npc in Terraria.Main.npc) {
                 if (npc == null || npc.townNPC == true) {
                     continue;
@@ -69,19 +86,11 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
             }
         }
 
-        /// <summary>
-        /// Cleans up and destroys the world economy interface
-        /// </summary>
-        public static void DestroyWorldEconomy() {
-            ServerApi.Hooks.NetSendData.Deregister(SEconomyPlugin.Instance, NetHooks_SendData);
-            ServerApi.Hooks.GameUpdate.Deregister(SEconomyPlugin.Instance, Game_Update);
-        }
-
         #region "NPC Reward handling"
         /// <summary>
         /// Adds damage done by a player to an NPC slot.  When the NPC dies the rewards for it will fill out.
         /// </summary>
-        static void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage) {
+        protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage) {
             List<PlayerDamage> damageList = null;
             PlayerDamage playerDamage = null;
 
@@ -112,7 +121,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
         /// <summary>
         /// Should occur when an NPC dies; gives rewards out to all the players that hit it.
         /// </summary>
-        static void GiveRewardsForNPC(Terraria.NPC NPC) {
+        protected void GiveRewardsForNPC(Terraria.NPC NPC) {
             List<PlayerDamage> playerDamageList = null;
             Economy.EconomyPlayer ePlayer = null;
             Money rewardMoney = 0L;
@@ -172,7 +181,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
         /// <summary>
         /// Assigns the last player slot to a victim in PVP
         /// </summary>
-        static void PlayerHitPlayer(int HitterSlot, int VictimSlot) {
+        protected void PlayerHitPlayer(int HitterSlot, int VictimSlot) {
             lock (__dictionaryLock) {
                 if (PVPDamage.ContainsKey(VictimSlot)) {
                     PVPDamage[VictimSlot] = HitterSlot;
@@ -185,7 +194,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
         /// <summary>
         /// Runs when a player dies, and hands out penalties if enabled, and rewards for PVP
         /// </summary>
-        static void ProcessDeath(int DeadPlayerSlot, bool PVPDeath) {
+        protected void ProcessDeath(int DeadPlayerSlot, bool PVPDeath) {
             TShockAPI.TSPlayer deadPlayer = TShockAPI.TShock.Players[DeadPlayerSlot];
             int lastHitterSlot = -1;
 
@@ -240,7 +249,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
         /// <summary>
         /// Occurs when the server has received a message from the client.
         /// </summary>
-        private static void NetHooks_GetData(GetDataEventArgs args) {
+        protected void NetHooks_GetData(GetDataEventArgs args) {
             byte[] bufferSegment = null;
             Terraria.Player player = null;
 
@@ -273,7 +282,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
         /// <summary>
         /// Occurs when the server has a chunk of data to send
         /// </summary>
-        public static void NetHooks_SendData(SendDataEventArgs e) {
+        protected void NetHooks_SendData(SendDataEventArgs e) {
             if (e.MsgId == PacketTypes.PlayerDamage) {
                 //occurs when a player hits another player.  ignoreClient is the player that hit, e.number is the 
                 //player that got hit, and e.number4 is a flag indicating PvP damage
@@ -286,7 +295,8 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
                 ProcessDeath(e.number, Convert.ToBoolean(e.number4));
             }
         }
-    }
+
+	}
 
     /// <summary>
     /// Damage structure, wraps a player slot and the amount of damage they have done.

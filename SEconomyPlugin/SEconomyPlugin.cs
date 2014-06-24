@@ -129,7 +129,7 @@ namespace Wolfje.Plugins.SEconomy {
             //Journal.XBankAccount.BankAccountFlagsChanged -= BankAccount_BankAccountFlagsChanged;
             SEconomyPlugin.RunningJournal.BankTransferCompleted -= BankAccount_BankTransferCompleted;
 
-            WorldEconomy.WorldEconomy.DestroyWorldEconomy();
+            //WorldEconomy.WorldEconomy.DestroyWorldEconomy();
 
             HaltIfBackup();
         }
@@ -149,7 +149,7 @@ namespace Wolfje.Plugins.SEconomy {
                 
                 SEconomyPlugin.RunningJournal.BankTransferCompleted -= BankAccount_BankTransferCompleted;
                
-                WorldEconomy.WorldEconomy.DestroyWorldEconomy();
+              //  WorldEconomy.WorldEconomy.DestroyWorldEconomy();
 
                 HaltIfBackup();
 
@@ -260,7 +260,7 @@ namespace Wolfje.Plugins.SEconomy {
 
           //  WorldAccount = Journal.TransactionJournal.EnsureWorldAccountExists();
             
-            WorldEconomy.WorldEconomy.InitializeWorldEconomy();
+           // WorldEconomy.WorldEconomy.InitializeWorldEconomy();
             Journal.TransactionJournal.InitializeTransactionCache();
 
             SEconomyPlugin.BackupCanRun = true;

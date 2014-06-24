@@ -89,6 +89,7 @@
     <Compile Include="Packets\UpdateNPC.cs" />
     <Compile Include="Performance\Profiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SEconomy.cs" />
     <Compile Include="SEconomyPlugin.cs" />
     <Compile Include="WorldEconomy\WorldEconomy.cs" />
   </ItemGroup>
