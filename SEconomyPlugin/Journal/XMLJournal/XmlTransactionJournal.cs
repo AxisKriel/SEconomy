@@ -98,11 +98,11 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 					bool accountEnabled = (worldAccount.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled;
 
 					if (!accountEnabled) {
-						TShockAPI.Log.ConsoleError("The world account for world " + Terraria.Main.worldName + " is disabled.  Currency will not work for this game.");
+						TShockAPI.Log.ConsoleError(string.Format(SEconomyPlugin.Locale.StringOrDefault(60, "The world account for world {0} is disabled.  Currency will not work for this game."), Terraria.Main.worldName));
 						return null;
 					}
 				} else {
-					TShockAPI.Log.ConsoleError("There was an error loading the bank account for this world.  Currency will not work for this game.");
+					TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(61, "There was an error loading the bank account for this world.  Currency will not work for this game."));
 				}
 			}
 
@@ -153,59 +153,9 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
 		XDocument NewJournal()
 		{
-			string journalComment =
-@"
-
-This is the SEconomy transaction journal file. 
-
-You have probably guessed by now this is an XML format, this file persists all the transactions and bankaccounts 
-in your server instance.  This file is not written to actively, all transaction processing is done in memory and 
-coped out to disk every time the backup runs.
-
-Editing this file here isn't going to make your changes persist, once edited you will need to execute /bank loadjournal 
-in the server console to resync the in-memory journal with this one.  Be aware that you will lose any in-memory changes 
-from now until when the file was writte, this usually results in a minor rollback of people's money.
-
-Obviously it would be retarded to use that command on a journal that is months old.....
-";
-
-			string journalAccountComment =
-				@"
-BankAccounts Collection
-
-This element holds all the bank accounts for a running server. Each BankAccount has a unique account number (starting from 1) and more attributes:
-
-* UserAccountName - The login name of the TShock account this bank account is linked to
-* WorldID - The WorldID that the account was created from, this is used when LockedToWorld is set and you want to lock bank accounts to worlds, otherwise they
-            are static and are loaded in whichever world you create on the server.
-* Flags - A bit-bashed set of flags for the account that control the state of it.  Look in the source for BankAccountFlags for a definition of what the bits do.
-
-Please note, BankAccount elements do not keep a running total of their balance, that is done through summing all Transaction amounts 
-(by XPath /Journal/Transactions/Transaction[@BankAccountFK=BankAccountK]/@Amount) linked to this account.
-";
-
-			string journalTransComment =
-				@"
-Transaction Collection
-
-This element holds all the transactions for the current running server.  Each transaction is double-entry accounted, 
-which means that a transaction is essentially done twice, representing the loss of money on one account, and the gain 
-of money in the destination account or vice-versa.
-
-A double-entry account journal must have two transactions; a source and a destination, and the amounts in each must be 
-the inverse of eachother: If money is to be transferred away from a source account the source amount must be negative 
-and the destination amount must be positive; and conversely if money is to be transferred into a source account the 
-source amount must be postitive and the destination amount must be negative.
-
-A Transaction has these following attributes:
-
-* BankAccountTransactionK - A unique number identifying this transaction
-* BankAccountFK - The unique identifier of the BankAccount element this transaction comes from
-* Amount - The amount of money this transaction was for; positive for a gain in money, negative for a loss
-* Flags - A bit-set flag of transaction options (See source for BankAccountTransferOptions for what they do)
-* Flags2 - Unused
-* BankAccountTransactionFK - A unique identifier of the opposite side of this double-entry transaction, therefore binding them together.
-";
+			string journalComment = SEconomyPlugin.Locale.StringOrDefault(62);
+			string journalAccountComment = SEconomyPlugin.Locale.StringOrDefault(63);
+			string journalTransComment = SEconomyPlugin.Locale.StringOrDefault(64);
 
 			return new XDocument(new XDeclaration("1.0", "utf-8", "yes"),
 								 new XComment(journalComment),
@@ -350,10 +300,10 @@ A Transaction has these following attributes:
 							File.Move(path, path + ".bak");
 						}
 					} catch {
-						TShockAPI.Log.ConsoleError("seconomy backup: Cannot copy {0} to {1}, shadow backups will not work!", path, path + ".bak");
+						TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(65, "seconomy backup: Cannot copy {0} to {1}, shadow backups will not work!"), path, path + ".bak");
 					}
 
-					Console.WriteLine("seconomy journal: writing to disk");
+					Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(66, "seconomy journal: writing to disk"));
 					try {
 						using (FileStream fs = new FileStream(path + ".tmp", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None)) {
 							fs.SetLength(0);
@@ -366,13 +316,13 @@ A Transaction has these following attributes:
 							}
 						}
 					} catch {
-						TShockAPI.Log.ConsoleError("seconomy journal: Saving your journal failed!");
+						TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(67, "seconomy journal: Saving your journal failed!"));
 
 						if (File.Exists(path + ".tmp") == true) {
 							try {
 								File.Delete(path + ".tmp");
 							} catch {
-								TShockAPI.Log.ConsoleError("seconomy journal: Cannot delete temporary file!");
+								TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(68, "seconomy journal: Cannot delete temporary file!"));
 								throw;
 							}
 						}
@@ -382,15 +332,15 @@ A Transaction has these following attributes:
 						try {
 							File.Move(path + ".tmp", path);
 						} catch {
-							TShockAPI.Log.ConsoleError("seconomy journal: Cannot delete temporary file!");
+							TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(68, "seconomy journal: Cannot delete temporary file!"));
 							throw;
 						}
 					}
 
-					Console.WriteLine("seconomy journal: finished backing up.");
+					Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(69, "seconomy journal: finished backing up."));
 				}
 			} catch {
-				Console.WriteLine("seconomy journal: There was an error saving your journal.  Make sure you have backups.");
+				Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(70, "seconomy journal: There was an error saving your journal.  Make sure you have backups."));
 			} finally {
 				JournalSaving = false;
 			}
@@ -403,54 +353,51 @@ A Transaction has these following attributes:
 
 		public void LoadJournal()
 		{
-
 			ConsoleColor origColour = Console.ForegroundColor;
 			Console.ForegroundColor = ConsoleColor.Yellow;
 
-			Console.WriteLine("SEconomy is loading its journal.");
+			Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(71, "SEconomy is loading its journal."));
 			Console.WriteLine();
 
 			try {
 				byte[] fileData = new byte[0];
 			initPoint:
 				Console.ForegroundColor = ConsoleColor.Yellow;
-				Console.Write("loading journal");
+				Console.Write(SEconomyPlugin.Locale.StringOrDefault(72, "loading journal"));
 				try {
 					fileData = File.ReadAllBytes(path);
 				} catch (Exception ex) {
 					Console.ForegroundColor = ConsoleColor.DarkCyan;
 
 					if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
-						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[not found, creating new]\r\n");
+						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, string.Format("{0}\r\n", SEconomyPlugin.Locale.StringOrDefault(73, "[not found, creating new]")));
 
 						SaveJournal();
 						//yes there are valid uses for goto, don't judge me fool
 						goto initPoint;
 					} else if (ex is System.Security.SecurityException) {
-						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[denied]\r\n");
+						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(74, "denied"));
 					} else {
-						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[failed]\r\n");
+						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(75, "failed"));
 					}
 				}
 
 				ConsoleEx.WriteAtEnd(2, ConsoleColor.Green, "[OK: {0} kB]\r\n", fileData.LongLength / 1024);
 				Console.ForegroundColor = ConsoleColor.Yellow;
+				Console.Write(SEconomyPlugin.Locale.StringOrDefault(76, "decompressing journal"));
 
-				Console.Write("decompressing journal");
 				byte[] uncompressedData;
 				try {
 					uncompressedData = GZipDecompress(fileData);
 				} catch {
-					ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[failed]\r\n");
+					ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(75, "failed"));
 					return;
 				}
 
 				Console.ForegroundColor = ConsoleColor.Green;
-
 				ConsoleEx.WriteAtEnd(2, ConsoleColor.Green, "[OK: gz {0} kB]\r\n", uncompressedData.LongLength / 1024);
 				Console.ForegroundColor = ConsoleColor.Yellow;
-
-				Console.Write("parsing accounts");
+				Console.Write(SEconomyPlugin.Locale.StringOrDefault(77, "parsing accounts"));
 
 				try {
 					Hashtable bankAccountMap = new Hashtable();
@@ -587,35 +534,20 @@ A Transaction has these following attributes:
 									transactionMap.Add(elem.Attribute("BankAccountTransactionK").Value, trans.BankAccountTransactionK);
 								}
 
-
-								//try {
-								//    trans.TransactionDateUtc = DateTime.Parse(elem.Attribute("TransactionDateUtc").Value);
-								//} catch {
-								//    trans.TransactionDateUtc = DateTime.UtcNow;
-								//}
-								//trans.Flags = (BankAccountTransactionFlags)Enum.Parse(typeof(BankAccountTransactionFlags), elem.Attribute("Flags").Value);
-
-								//if (elem.Attribute("Flags2") != null) {
-								//    trans.Flags2 = (BankAccountTransactionFlags)Enum.Parse(typeof(BankAccountTransactionFlags), elem.Attribute("Flags2").Value);
-
-								//}
-
-
 								if (oldPercent != (int)percentComplete) {
 									ConsoleEx.WriteAtEnd(4, ConsoleColor.Yellow, "[{0}%]", (int)percentComplete);
 									oldPercent = (int)percentComplete;
 								}
 
 								Interlocked.Increment(ref i);
-							}//);
+							}
 
 							Console.ForegroundColor = ConsoleColor.Yellow;
 
-							Console.Write("\r\nupgrading transactions");
+							Console.Write("\r\n", SEconomyPlugin.Locale.StringOrDefault(78, "upgrading transactions"));
 							int txCount = Transactions.Count();
 							int x = 0;
-
-
+							
 							foreach (IBankAccount account in bankAccounts) {
 								foreach (ITransaction trans in account.Transactions) {
 									double pcc = (double)x / (double)txCount * 100;
@@ -644,11 +576,10 @@ A Transaction has these following attributes:
 							Console.ForegroundColor = ConsoleColor.Yellow;
 						}
 					}
-
 				} catch(Exception ex) {
-					ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[corrupt]\r\n");
+					ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(79, "corrupt"));
 					TShockAPI.Log.ConsoleError(ex.ToString());
-					Console.WriteLine("Your transaction journal appears to be corrupt and transactions have been lost.\n\nYou will start with a clean journal.\nYour old journal file has been move to SEconomy.journal.xml.gz.corrupt");
+					Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(80, "Your transaction journal appears to be corrupt and transactions have been lost.\n\nYou will start with a clean journal.\nYour old journal file has been move to SEconomy.journal.xml.gz.corrupt"));
 					File.Move(path, path + "." + DateTime.Now.ToFileTime().ToString() + ".corrupt");
 
 					SaveJournal();
@@ -658,11 +589,8 @@ A Transaction has these following attributes:
 				}
 			} finally {
 				Console.ForegroundColor = origColour;
-
 				Console.WriteLine();
 			}
-
-			System.GC.Collect();
 		}
 
 		public Task LoadJournalAsync()
@@ -685,7 +613,7 @@ A Transaction has these following attributes:
 			int bankAccountCount = BankAccounts.Count();
 			bool responsibleForTurningBackupsBackOn = false;
 
-			Console.WriteLine("seconomy xml: beginning Squash");
+			Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(81, "seconomy xml: beginning Squash"));
 
 			if (SEconomyInstance.RunningJournal.BackupsEnabled == true) {
 				SEconomyInstance.RunningJournal.BackupsEnabled = false;
@@ -712,7 +640,7 @@ A Transaction has these following attributes:
 			}
 
 			//abandon the old journal and assign the squashed one
-			Console.WriteLine("re-syncing online accounts.");
+			Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(82, "re-syncing online accounts."));
 
 			foreach (Journal.IBankAccount account in BankAccounts) {
 				IBankAccount runtimeAccount = GetBankAccount(account.BankAccountK);
@@ -842,9 +770,9 @@ A Transaction has these following attributes:
 					 */
 					if (ToAccount.IsSystemAccount == false && ToAccount.IsPluginAccount == false && FromAccount.Owner != null) {
 						if (Amount < 0) {
-							FromAccount.Owner.TSPlayer.SendErrorMessage("Invalid amount.");
+							FromAccount.Owner.TSPlayer.SendErrorMessage(SEconomyPlugin.Locale.StringOrDefault(83, "Invalid amount."));
 						} else {
-							FromAccount.Owner.TSPlayer.SendErrorMessage("You need {0} more money to make this payment.", ((Money)(FromAccount.Balance - Amount)).ToLongString());
+							FromAccount.Owner.TSPlayer.SendErrorMessage(SEconomyPlugin.Locale.StringOrDefault(84, "You need {0} more to make this payment."), ((Money)(FromAccount.Balance - Amount)).ToLongString());
 						}
 					}
 				}

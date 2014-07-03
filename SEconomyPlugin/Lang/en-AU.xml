@@ -30,7 +30,7 @@
 	<s> for </s>
 	<s>You have {0}.</s>
 	<s>seconomy async: error occurred on a task thread: </s>
-	<!-- ChatCommands.cs: 27-57 -->
+	<!-- ChatCommands.cs: 27-59 -->
 	<s>This server is running SEconomy v{0} by Wolfje</s>
 	<s>"Download here: http://plugins.tw.id.au"</s>
 	<s>You can:</s>
@@ -63,4 +63,74 @@
 	<s>bank pay: You don't have permission to do that.</s>
 	<s>Usage: /bank give|take [Player] [Amount]</s>
 	<s>bank give: You don't have permission to do that.</s>
+	<!-- XmlTransactionJournal.cs: 60-84 -->
+	<s>The world account for world {0} is disabled.  Currency will not work for this game.</s>
+	<s>There was an error loading the bank account for this world.  Currency will not work for this game.</s>
+	<s>
+		This is the SEconomy transaction journal file.
+
+		You have probably guessed by now this is an XML format, this file persists all the transactions and bankaccounts
+		in your server instance.  This file is not written to actively, all transaction processing is done in memory and
+		coped out to disk every time the backup runs.
+
+		Editing this file here isn't going to make your changes persist, once edited you will need to execute /bank loadjournal
+		in the server console to resync the in-memory journal with this one.  Be aware that you will lose any in-memory changes
+		from now until when the file was writte, this usually results in a minor rollback of people's money.
+
+		Obviously it would be retarded to use that command on a journal that is months old.....
+	</s>
+	<s>
+		BankAccounts Collection
+
+		This element holds all the bank accounts for a running server. Each BankAccount has a unique account number (starting from 1) and more attributes:
+
+		* UserAccountName - The login name of the TShock account this bank account is linked to
+		* WorldID - The WorldID that the account was created from, this is used when LockedToWorld is set and you want to lock bank accounts to worlds, otherwise they
+		are static and are loaded in whichever world you create on the server.
+		* Flags - A bit-bashed set of flags for the account that control the state of it.  Look in the source for BankAccountFlags for a definition of what the bits do.
+
+		Please note, BankAccount elements do not keep a running total of their balance, that is done through summing all Transaction amounts
+		(by XPath /Journal/Transactions/Transaction[@BankAccountFK=BankAccountK]/@Amount) linked to this account.
+	</s>
+	<s>
+		Transaction Collection
+
+		This element holds all the transactions for the current running server.  Each transaction is double-entry accounted,
+		which means that a transaction is essentially done twice, representing the loss of money on one account, and the gain
+		of money in the destination account or vice-versa.
+
+		A double-entry account journal must have two transactions; a source and a destination, and the amounts in each must be
+		the inverse of eachother: If money is to be transferred away from a source account the source amount must be negative
+		and the destination amount must be positive; and conversely if money is to be transferred into a source account the
+		source amount must be postitive and the destination amount must be negative.
+
+		A Transaction has these following attributes:
+
+		* BankAccountTransactionK - A unique number identifying this transaction
+		* BankAccountFK - The unique identifier of the BankAccount element this transaction comes from
+		* Amount - The amount of money this transaction was for; positive for a gain in money, negative for a loss
+		* Flags - A bit-set flag of transaction options (See source for BankAccountTransferOptions for what they do)
+		* Flags2 - Unused
+		* BankAccountTransactionFK - A unique identifier of the opposite side of this double-entry transaction, therefore binding them together.
+	</s>
+	<s>seconomy backup: Cannot copy {0} to {1}, shadow backups will not work!</s>
+	<s>seconomy journal: writing to disk</s>
+	<s>seconomy journal: Saving your journal failed!</s>
+	<s>seconomy journal: Cannot delete temporary file!</s>
+	<s>seconomy journal: finished backing up.</s>
+	<s>seconomy journal: There was an error saving your journal.  Make sure you have backups.</s>
+	<s>SEconomy is loading its journal.</s>
+	<s>loading journal</s>
+	<s>[not found, creating new]</s>
+	<s>denied</s>
+	<s>failed</s>
+	<s>decompressing journal</s>
+	<s>parsing accounts</s>
+	<s>upgrading transactions</s>
+	<s>corrupt</s>
+	<s>Your transaction journal appears to be corrupt and transactions have been lost.\n\nYou will start with a clean journal.\nYour old journal file has been move to SEconomy.journal.xml.gz.corrupt</s>
+	<s>seconomy xml: beginning Squash</s>
+	<s>re-syncing online accounts.</s>
+	<s>Invalid amount.</s>
+	<s>You need {0} more to make this payment.</s>
 </Language>

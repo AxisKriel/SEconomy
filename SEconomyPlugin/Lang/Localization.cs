@@ -35,6 +35,7 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 		public int Load()
 		{
 			XDocument localeDoc = null;
+			IEnumerable<XElement> elements = null;
 			int tableCount = 0;
 			string localePath = string.Format("{1}{0}Lang{0}{2}.xml", System.IO.Path.DirectorySeparatorChar, Config.BaseDirectory, this.Locale);
 
@@ -56,14 +57,15 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 
 			tableCount = localeDoc.Root.Elements().Count();
 			this.StringTable = new string[tableCount];
-
+			
+			elements = localeDoc.Root.Elements("s");
 			for (int i = 0; i < tableCount; i++) {
 				XElement stringElement = null;
-				if ((stringElement = localeDoc.Root.Elements().ElementAtOrDefault(i)) == null) {
+				if ((stringElement = elements.ElementAtOrDefault(i)) == null) {
 					return -1;
 				}
 
-				if ((this.StringTable[i] = stringElement.Descendants().SingleOrDefault().Value) == null) {
+				if ((this.StringTable[i] = stringElement.Value) == null) {
 					return -1;
 				}
 			}
