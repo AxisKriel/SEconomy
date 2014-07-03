@@ -5,7 +5,7 @@ SEconomy - Server-sided currency, economy and ranking system for TShock servers
 
 ## Forking
 
-Make sure you `git submodule update --init --recursive'
+Make sure you `git submodule update --init --recursive` before opening the solution in Visual Studio.
 
 ## Translating for SEconomy
 
