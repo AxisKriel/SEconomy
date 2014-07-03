@@ -122,11 +122,7 @@ namespace Wolfje.Plugins.SEconomy {
 
 		protected async void GameHooks_PostInitialize(EventArgs e)
 		{
-			Parent.WorldAccount = Parent.RunningJournal.GetWorldAccount();
-			await Parent.WorldAccount.SyncBalanceAsync();
-			TShockAPI.Log.ConsoleInfo(string.Format("SEconomy: world account: paid {0} to players.", Parent.WorldAccount.Balance.ToLongString()));
-
-            Parent.PayRunTimer.Start();
+			await Parent.BindToWorldAsync();
 		}
 
 		protected async void PlayerHooks_PlayerPostLogin(TShockAPI.Hooks.PlayerPostLoginEventArgs e)

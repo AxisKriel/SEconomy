@@ -10,3 +10,7 @@
 	
 	* aliascmd.bypasscooldown: May bypass cooldowns on alias commands
 	* aliascmd.reloadconfig: Has permission to reload the alliascmd config filed
+
+	* seconomy.command.reload: Has permission to reload seconomy
+	* seconomy.command.stop: Has permission to stop seconomy
+	* seconomy.command.start: Has permission to start seconomy

@@ -24,11 +24,9 @@ namespace Wolfje.Plugins.SEconomy {
 			this.PluginInstance = PluginInstance;
 		}
 
-		#region "Event Handlers"
-	
-		#endregion
-
+		
 		#region "Loading and setup"
+		
 		public int LoadSEconomy()
 		{
             try {
@@ -38,6 +36,7 @@ namespace Wolfje.Plugins.SEconomy {
                 this.EventHandlers = new EventHandlers(this);
                 this.ChatCommands = new ChatCommands(this);
                 this.TransactionCache = new Journal.JournalTransactionCache();
+				this.EconomyPlayers = new List<Economy.EconomyPlayer>();
             }
             catch (Exception ex) {
                 TShockAPI.Log.ConsoleError("Initialization of SEconomy failed: " + ex.ToString());
@@ -45,6 +44,19 @@ namespace Wolfje.Plugins.SEconomy {
             }
 
 			return 0;
+		}
+
+		/// <summary>
+		/// Called after LoadSEconomy, or on PostInitialize, this binds the current SEconomy instance
+		/// to the currently running terraria world.
+		/// </summary>
+		public async Task BindToWorldAsync()
+		{
+			WorldAccount = RunningJournal.GetWorldAccount();
+			await WorldAccount.SyncBalanceAsync();
+			TShockAPI.Log.ConsoleInfo(string.Format("SEconomy: world account: paid {0} to players.", WorldAccount.Balance.ToLongString()));
+
+			PayRunTimer.Start();
 		}
 
 		#endregion
@@ -80,6 +92,9 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		public Economy.EconomyPlayer GetEconomyPlayerSafe(string Name)
 		{
+			if (EconomyPlayers == null) {
+				return null;
+			}
 			return EconomyPlayers.FirstOrDefault(i => i.TSPlayer.Name == Name);
 		}
 

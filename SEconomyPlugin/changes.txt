@@ -2,12 +2,16 @@
 ---
 
 Update 15
-[-] Removed old EPRS import code
 [+] Added polygamy support to SEconomy
-[-] removed statics in SEconomy plugin
 [+] Added disposable support to all components
+[+] New command: /sec[onomy] rl|reload: Completely shuts down and refreshes SEconomy
+[+] New command: /sec[onomy] stop: Stops and unloads SEconomy
+[+] New command: /sec[onomy] stop: Starts a new instance of SEconomy
+[+] Added website and author information to /bank and /sec
+[-] Removed old EPRS import code
+[-] Removed old dead profiler code
+[-] Removed statics in SEconomy plugin
 [-] Removed TSPlayer extensions as they are in public code
 [c] Changed SEconomy instance to Lazy<T> with built-in singleton double locking
 [c] Changed most ContinueWith delegates to awaits in .net 4.5
-[-] Removed old dead profiler code
 [c] Rewrote Configuration interface

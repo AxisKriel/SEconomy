@@ -77,8 +77,63 @@ namespace Wolfje.Plugins.SEconomy {
 
 		public override void Initialize()
 		{
+			TShockAPI.Commands.ChatCommands.Add(new TShockAPI.Command(TShock_CommandExecuted, "seconomy", "sec"));
 			_seconomyInstance = new SEconomy(this);
 			Instance.LoadSEconomy();
+		}
+
+		protected async void TShock_CommandExecuted(TShockAPI.CommandArgs args)
+		{
+			if (args.Parameters.Count == 0) {
+				args.Player.SendInfoMessage("SEconomy v" + this.Version + " by Wolfje");
+				args.Player.SendInfoMessage(" * http://plugins.tw.id.au/");
+				args.Player.SendInfoMessage(" * /sec[onomy] reload|rl - Reloads SEconomy");
+				args.Player.SendInfoMessage(" * /sec[onomy] stop - Stops and unloads SEconomy");
+				args.Player.SendInfoMessage(" * /sec[onomy] start - Reloads SEconomy");
+				return;
+			}
+
+			if ((args.Parameters[0].Equals("reload", StringComparison.CurrentCultureIgnoreCase)
+				|| args.Parameters[0].Equals("rl", StringComparison.CurrentCultureIgnoreCase))
+				&& args.Player.Group.HasPermission("seconomy.command.reload") == true) {
+				
+					await Task.Run(async () => {
+						if (_seconomyInstance != null) {
+							_seconomyInstance.Dispose();
+							_seconomyInstance = null;
+						}
+
+						_seconomyInstance = new SEconomy(this);
+						_seconomyInstance.LoadSEconomy();
+						await _seconomyInstance.BindToWorldAsync();
+					});
+			}
+
+			if (args.Parameters[0].Equals("stop", StringComparison.CurrentCultureIgnoreCase)
+				&& args.Player.Group.HasPermission("seconomy.command.stop") == true) {
+				if (_seconomyInstance == null) {
+					args.Player.SendErrorMessage("seconomy stop: SEconomy is already stopped. Use /sec start to start");
+					return;
+				}
+
+				await Task.Run(() => {
+					_seconomyInstance.Dispose();
+					_seconomyInstance = null;
+				});
+			}
+
+			if (args.Parameters[0].Equals("start", StringComparison.CurrentCultureIgnoreCase)
+				&& args.Player.Group.HasPermission("seconomy.command.start") == true) {
+				if (_seconomyInstance != null) {
+					args.Player.SendErrorMessage("seconomy stop: SEconomy is already started. Use /sec stop to stop.");
+					return;
+				}
+				await Task.Run(async() => {
+					_seconomyInstance = new SEconomy(this);
+					_seconomyInstance.LoadSEconomy();
+					await _seconomyInstance.BindToWorldAsync();
+				});
+			}
 		}
 
         protected override void Dispose(bool disposing) {

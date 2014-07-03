@@ -24,7 +24,8 @@ namespace Wolfje.Plugins.SEconomy {
 			string namePrefix = "Your";
 
 			if (args.Parameters.Count == 0) {
-				args.Player.SendInfoMessage("This server is running SEconomy v{0}", Parent.PluginInstance.Version);
+				args.Player.SendInfoMessage("This server is running SEconomy v{0} by Wolfje", Parent.PluginInstance.Version);
+				args.Player.SendInfoMessage("Download here: http://plugins.tw.id.au");
 				args.Player.SendInfoMessage("You can:");
 
 				args.Player.SendInfoMessage("* View your balance with /bank bal");
