@@ -44,38 +44,48 @@ namespace Wolfje.Plugins.SEconomy {
 			//Player died from PvP
 			if ((e.TransferOptions & Journal.BankAccountTransferOptions.MoneyFromPvP) == Journal.BankAccountTransferOptions.MoneyFromPvP) {
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver) {
-					e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format("You killed {0} and gained {1}.", e.SenderAccount.Owner.TSPlayer.Name, e.Amount.ToLongString()), Color.Orange);
+					e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(13, "You killed {0} and gained {1}."), 
+						e.SenderAccount.Owner.TSPlayer.Name, e.Amount.ToLongString()), Color.Orange);
 				}
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToSender) == Journal.BankAccountTransferOptions.AnnounceToSender) {
-					e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format("{0} killed you and you lost {1}.", e.ReceiverAccount.Owner.TSPlayer.Name, e.Amount.ToLongString()), Color.Orange);
+					e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(14, "{0} killed you and you lost {1}."), 
+						e.ReceiverAccount.Owner.TSPlayer.Name, e.Amount.ToLongString()), Color.Orange);
 				}
 
 				//P2P transfers, both the sender and the reciever get notified.
 			} else if ((e.TransferOptions & Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) == Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) {
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver && e.ReceiverAccount != null && e.ReceiverAccount.Owner != null) {
-					e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format("You {3} {0} from {1}. Transaction # {2}", e.Amount.ToLongString(), e.SenderAccount.Owner != null ? e.SenderAccount.Owner.TSPlayer.Name : "The server", e.TransactionID, e.Amount > 0 ? "received" : "sent"), Color.Orange);
+					e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(15,"You {3} {0} from {1}. Transaction # {2}"), e.Amount.ToLongString(), 
+						e.SenderAccount.Owner != null ? e.SenderAccount.Owner.TSPlayer.Name : SEconomyPlugin.Locale.StringOrDefault(16, "The server"), e.TransactionID, 
+						e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(17, "received") : SEconomyPlugin.Locale.StringOrDefault(18, "sent")), Color.Orange);
 				}
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToSender) == Journal.BankAccountTransferOptions.AnnounceToSender && e.SenderAccount.Owner != null) {
-					e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format("You {3} {0} to {1}. Transaction # {2}", e.Amount.ToLongString(), e.ReceiverAccount.Owner.TSPlayer.Name, e.TransactionID, e.Amount > 0 ? "sent" : "received"), Color.Orange);
+					e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(15, "You {3} {0} from {1}. Transaction # {2}"), e.Amount.ToLongString(), e.ReceiverAccount.Owner.TSPlayer.Name, e.TransactionID,
+						e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(18, "sent") : SEconomyPlugin.Locale.StringOrDefault(17, "received")), Color.Orange);
 				}
 
 				//Everything else, including world to player, and player to world.
 			} else {
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.IsPayment) == Journal.BankAccountTransferOptions.IsPayment) {
 					if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToSender) == Journal.BankAccountTransferOptions.AnnounceToSender && e.SenderAccount.Owner != null) {
-						e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format("You {0} {1}{2}", e.Amount > 0 ? "paid" : "got paid", e.Amount.ToLongString(), !string.IsNullOrEmpty(e.TransactionMessage) ? " for " + e.TransactionMessage : ""), Color.Orange);
+						e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(19, "You {0} {1}{2}"), 
+							e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(20, "paid") : SEconomyPlugin.Locale.StringOrDefault(21, "got paid"), e.Amount.ToLongString(),
+							!string.IsNullOrEmpty(e.TransactionMessage) ? SEconomyPlugin.Locale.StringOrDefault(24, " for ") + e.TransactionMessage : ""), Color.Orange);
 					}
 
 					if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver && e.ReceiverAccount.Owner != null) {
-						e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format("You {0} {1}{2}", e.Amount > 0 ? "got paid" : "paid", e.Amount.ToLongString(), !string.IsNullOrEmpty(e.TransactionMessage) ? " for " + e.TransactionMessage : ""), Color.Orange);
+						e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(19, "You {0} {1}{2}"), e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(21, "got paid") : SEconomyPlugin.Locale.StringOrDefault(20, "paid"), e.Amount.ToLongString(),
+							!string.IsNullOrEmpty(e.TransactionMessage) ? SEconomyPlugin.Locale.StringOrDefault(24, " for ") + e.TransactionMessage : ""), Color.Orange);
 					}
 				} else {
 					if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToSender) == Journal.BankAccountTransferOptions.AnnounceToSender && e.SenderAccount.Owner != null) {
-						e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format("You {0} {1}{2}", e.Amount > 0 ? "lost" : "gained", e.Amount.ToLongString(), !string.IsNullOrEmpty(e.TransactionMessage) ? " for " + e.TransactionMessage : ""), Color.Orange);
+						e.SenderAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(19, "You {0} {1}{2}"), e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(22, "lost") : SEconomyPlugin.Locale.StringOrDefault(23, "gained"), e.Amount.ToLongString(), 
+							!string.IsNullOrEmpty(e.TransactionMessage) ? SEconomyPlugin.Locale.StringOrDefault(24, " for ") + e.TransactionMessage : ""), Color.Orange);
 					}
 
 					if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver && e.ReceiverAccount.Owner != null) {
-						e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format("You {0} {1}{2}", e.Amount > 0 ? "gained" : "lost", e.Amount.ToLongString(), !string.IsNullOrEmpty(e.TransactionMessage) ? " for " + e.TransactionMessage : ""), Color.Orange);
+						e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(19, "You {0} {1}{2}"), e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(23, "gained") : SEconomyPlugin.Locale.StringOrDefault(22, "lost"), e.Amount.ToLongString(), 
+							!string.IsNullOrEmpty(e.TransactionMessage) ? SEconomyPlugin.Locale.StringOrDefault(24, " for ") + e.TransactionMessage : ""), Color.Orange);
 					}
 				}
 			}
@@ -138,7 +148,7 @@ namespace Wolfje.Plugins.SEconomy {
 				return;
 			}
 
-			e.Player.SendInfoMessage("You have {0}.", ePlayer.BankAccount.Balance.ToLongString());
+			e.Player.SendInfoMessage(SEconomyPlugin.Locale.StringOrDefault(25, "You have {0}."), ePlayer.BankAccount.Balance.ToLongString());
 		}
 
 		/// <summary>
@@ -173,7 +183,7 @@ namespace Wolfje.Plugins.SEconomy {
 				return;
 			}
 
-			TShockAPI.Log.ConsoleError("seconomy async: error occurred on a task thread: " + e.Exception.Flatten().ToString());
+			TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(26, "seconomy async: error occurred on a task thread: ") + e.Exception.Flatten().ToString());
 			e.SetObserved();
 		}
 

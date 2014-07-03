@@ -83,6 +83,7 @@
     <Compile Include="Journal\XMLJournal\XmlTransaction.cs" />
     <Compile Include="Journal\JournalTransactionCache.cs" />
     <Compile Include="Journal\XMLJournal\XmlTransactionJournal.cs" />
+    <Compile Include="Lang\Localization.cs" />
     <Compile Include="Packets\DamageNPC.cs" />
     <Compile Include="Packets\PacketMarshal.cs" />
     <Compile Include="Packets\StrikeNPC.cs" />
@@ -113,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="changes.txt" />
+    <EmbeddedResource Include="Lang\en-AU.xml" />
     <Content Include="Permissions.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -8,10 +8,13 @@ Update 15
 [+] New command: /sec[onomy] stop: Stops and unloads SEconomy
 [+] New command: /sec[onomy] stop: Starts a new instance of SEconomy
 [+] Added website and author information to /bank and /sec
+[+] Localization support
+[+] en-AU language
 [-] Removed old EPRS import code
 [-] Removed old dead profiler code
 [-] Removed statics in SEconomy plugin
 [-] Removed TSPlayer extensions as they are in public code
+[-] Removed /bank enable|disable because it has forever done nothing and nobody even cares
 [c] Changed SEconomy instance to Lazy<T> with built-in singleton double locking
 [c] Changed most ContinueWith delegates to awaits in .net 4.5
 [c] Rewrote Configuration interface
