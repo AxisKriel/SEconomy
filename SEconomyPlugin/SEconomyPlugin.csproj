@@ -114,7 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="changes.txt" />
-    <EmbeddedResource Include="Lang\en-AU.xml" />
+    <EmbeddedResource Include="Lang\%24en-AU.xml" />
     <Content Include="Permissions.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

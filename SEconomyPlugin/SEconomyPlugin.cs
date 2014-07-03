@@ -78,6 +78,7 @@ namespace Wolfje.Plugins.SEconomy {
 
 		public override void Initialize()
 		{
+			Lang.Localization.PrepareLanguages();
 			Locale = new Lang.Localization("en-AU");
 
 			TShockAPI.Commands.ChatCommands.Add(new TShockAPI.Command(TShock_CommandExecuted, "seconomy", "sec"));

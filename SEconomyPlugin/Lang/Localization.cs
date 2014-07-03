@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Reflection;
 
 namespace Wolfje.Plugins.SEconomy.Lang {
 	public class Localization {
@@ -18,6 +20,38 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 
 			if (Load() < 0) {
 				TShockAPI.Log.ConsoleError("SEconomy language loading failed.");
+			}
+		}
+
+		public static void PrepareLanguages()
+		{
+			Regex resourceRegex = new Regex(@"\$(.*)$");
+			string localeDir = string.Format("{1}{0}Lang{0}", System.IO.Path.DirectorySeparatorChar, Config.BaseDirectory);
+
+			foreach (string resourceName in Assembly.GetExecutingAssembly().GetManifestResourceNames()) {
+				string fullResourcePath = null;
+				string fileName = null;
+				Match fileMatch = null;
+
+				if (resourceName.EndsWith(".xml") == false 
+					|| resourceRegex.IsMatch(resourceName) == false
+					|| (fileMatch = resourceRegex.Match(resourceName)) == null
+					|| (fileName = fileMatch.Groups[1].Value) == null) {
+					continue;
+				}
+
+				fullResourcePath = string.Format("{0}{1}{2}", localeDir, System.IO.Path.DirectorySeparatorChar, fileName);
+				try {
+					if (System.IO.File.Exists(fullResourcePath) == true) {
+						continue;
+					}
+
+					using (StreamReader sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))) {
+						System.IO.File.WriteAllText(fullResourcePath, sr.ReadToEnd());
+					}
+				} catch (Exception) {
+					
+				}
 			}
 		}
 
