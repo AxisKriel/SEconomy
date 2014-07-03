@@ -5,11 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Wolfje.Plugins.SEconomy.Journal {
-    public interface ITransactionJournal {
+    public interface ITransactionJournal : IDisposable  {
 
         #region "Transaction Journal Events"
         event EventHandler<PendingTransactionEventArgs> BankTransactionPending;
         #endregion
+
+		SEconomy SEconomyInstance { get; set; }
 
         List<IBankAccount> BankAccounts { get; }
         IEnumerable<ITransaction> Transactions { get; }
@@ -27,6 +29,8 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
         bool JournalSaving { get; set; }
 
+        bool BackupsEnabled { get; set; }
+
         void SaveJournal();
         Task SaveJournalAsync();
 
@@ -36,7 +40,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         void BackupJournal();
         Task BackupJournalAsync();
 
-        void SquashJournal();
         Task SquashJournalAsync();
 
         BankTransferEventArgs TransferBetween(IBankAccount FromAccount, IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage);

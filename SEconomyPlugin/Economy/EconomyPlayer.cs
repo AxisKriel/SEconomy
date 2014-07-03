@@ -6,100 +6,89 @@ using System.Threading.Tasks;
 
 namespace Wolfje.Plugins.SEconomy.Economy {
 
-    public class EconomyPlayer {
+	public class EconomyPlayer {
+		public Journal.IBankAccount BankAccount { get; internal set; }
+		public PlayerControlFlags LastKnownState { get; internal set; }
+		public DateTime IdleSince { get; internal set; }
+		public int Index { get; set; }
+		public TShockAPI.TSPlayer TSPlayer
+		{
+			get
+			{
+				if (Index < 0) {
+					return TShockAPI.TSServerPlayer.Server;
+				} else {
+					return TShockAPI.TShock.Players[Index];
+				}
+			}
+		}
 
-    #region "Events"
+		public EconomyPlayer(int index)
+		{
+			this.Index = index;
+		}
 
-        // <summary>
-        // Fires when a bank account is successully loaded.
-        // </summary>
-        //public static event EventHandler PlayerBankAccountLoaded;
-    #endregion
-        
-        public int Index { get; set; }
-        public TShockAPI.TSPlayer TSPlayer {
-            get {
-                if (Index < 0) {
-                    return TShockAPI.TSServerPlayer.Server;
-                } else {
-                    return TShockAPI.TShock.Players[Index];
-                }
-            }
-        }
+		#region "Events"
 
-        public EconomyPlayer(int index) {
-            this.Index = index;
-        }
-
-        public Journal.IBankAccount BankAccount { get; internal set; }
-        public PlayerControlFlags LastKnownState { get; internal set; }
-        
-        /// <summary>
-        /// Returns the date and time of a player's last action
-        /// </summary>
-        public DateTime IdleSince { get; internal set; }
-
-        /// <summary>
-        /// Returns a TimeSpan representing the amount of time the user has been idle for
-        /// </summary>
-        public TimeSpan TimeSinceIdle {
-            get {
-                return DateTime.Now.Subtract(this.IdleSince);
-            }
-        }
+		// <summary>
+		// Fires when a bank account is successully loaded.
+		// </summary>
+		//public static event EventHandler PlayerBankAccountLoaded;
+		#endregion
 
 
-        /// <summary>
-        /// Ensures a bank account exists for the logged-in user and makes sure it's loaded properly.
-        /// </summary>
-        public Task<Journal.IBankAccount> EnsureBankAccountExistsAsync() {
-            Guid p = SEconomyPlugin.Profiler.Enter("BankAccount Load: " + this.TSPlayer.Name);
-
-            Journal.IBankAccount account = SEconomyPlugin.RunningJournal.GetBankAccountByName(this.TSPlayer.UserAccountName);
-            if (account == null) {
-                account = CreateAccount(); 
-            }
-
-            this.BankAccount = account;
-
-            return BankAccount.SyncBalanceAsync().ContinueWith((task) => {
-                SEconomyPlugin.Profiler.ExitLog(p);
-                return account;
-            });
-        }
-
-        Journal.IBankAccount CreateAccount() {
-            Journal.IBankAccount newAccount = SEconomyPlugin.RunningJournal.AddBankAccount(this.TSPlayer.UserAccountName, Terraria.Main.worldID, Journal.BankAccountFlags.Enabled, "");
-            TShockAPI.Log.ConsoleInfo(string.Format("seconomy: bank account for {0} created.", TSPlayer.UserAccountName));
-
-		Money startingMoney;
-		if ( Money.TryParse(SEconomyPlugin.Configuration.StartingMoney, out startingMoney) && startingMoney > 0 ) {
-			SEconomyPlugin.WorldAccount.TransferToAsync(newAccount, startingMoney, Journal.BankAccountTransferOptions.AnnounceToReceiver, "starting out.", "starting out.");
+		/// <summary>
+		/// Returns a TimeSpan representing the amount of time the user has been idle for
+		/// </summary>
+		public TimeSpan TimeSinceIdle
+		{
+			get
+			{
+				return DateTime.Now.Subtract(this.IdleSince);
+			}
 		}
 
 
-            return newAccount;
-        }
+		/// <summary>
+		/// Ensures a bank account exists for the logged-in user and makes sure it's loaded properly.
+		/// </summary>
+		public async Task<Journal.IBankAccount> EnsureBankAccountExistsAsync()
+		{
+			Journal.IBankAccount account = SEconomyPlugin.Instance.RunningJournal.GetBankAccountByName(this.TSPlayer.UserAccountName);
+			if (account == null) {
+				account = await CreateAccountAsync();
+			}
 
-        void LoadBankAccount(long BankAccountK) {
-            Guid profile = SEconomyPlugin.Profiler.Enter(this.TSPlayer.UserAccountName + " LoadBankAccount");
-            Journal.IBankAccount account = SEconomyPlugin.RunningJournal.GetBankAccount(BankAccountK);
+			this.BankAccount = account;
+			await BankAccount.SyncBalanceAsync();
+			return account;
+		}
 
-            if (account != null) {
-                this.BankAccount = account;
+		async Task<Journal.IBankAccount> CreateAccountAsync()
+		{
+			Money startingMoney;
+			Journal.IBankAccount newAccount = SEconomyPlugin.Instance.RunningJournal.AddBankAccount(this.TSPlayer.UserAccountName, Terraria.Main.worldID, Journal.BankAccountFlags.Enabled, "");
 
-                BankAccount.SyncBalanceAsync().ContinueWith((task) => {
-                    TShockAPI.Log.ConsoleInfo(string.Format("seconomy: bank account for {0} loaded.", TSPlayer.UserAccountName));
-                    SEconomyPlugin.Profiler.ExitLog(profile);
-                });
-            } else {
-                TShockAPI.Log.ConsoleError(string.Format("seconomy: bank account for {0} failed.", TSPlayer.UserAccountName));
-                this.TSPlayer.SendErrorMessage("It appears you don't have a bank account.");
-            }
+			TShockAPI.Log.ConsoleInfo(string.Format("seconomy: bank account for {0} created.", TSPlayer.UserAccountName));
+			if (Money.TryParse(SEconomyPlugin.Instance.Configuration.StartingMoney, out startingMoney) && startingMoney > 0) {
+				await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(newAccount, startingMoney, Journal.BankAccountTransferOptions.AnnounceToReceiver, "starting out.", "starting out.");
+			}
 
-        }
+			return newAccount;
+		}
 
-    }
+		async void LoadBankAccount(long BankAccountK)
+		{
+			Journal.IBankAccount account = SEconomyPlugin.Instance.RunningJournal.GetBankAccount(BankAccountK);
+			if (account == null) {
+				TShockAPI.Log.ConsoleError(string.Format("seconomy: bank account for {0} failed.", TSPlayer.UserAccountName));
+				this.TSPlayer.SendErrorMessage("It appears you don't have a bank account.");
+				return;
+			}
 
-
+			this.BankAccount = account;
+			await BankAccount.SyncBalanceAsync();
+			TShockAPI.Log.ConsoleInfo(string.Format("seconomy: bank account for {0} loaded.", TSPlayer.UserAccountName));
+		}
+	}
 }

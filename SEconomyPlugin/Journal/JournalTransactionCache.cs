@@ -6,16 +6,16 @@ using System.Text;
 using System.Threading;
 
 namespace Wolfje.Plugins.SEconomy.Journal {
-
-    public sealed partial class TransactionJournal {
+    public class JournalTransactionCache : IDisposable {
 
 		/// <summary>
 		/// List of uncommitted funds
 		/// </summary>
-        static ConcurrentQueue<CachedTransaction> CachedTransactions { get; set; }
-        static readonly System.Timers.Timer UncommittedFundTimer = new System.Timers.Timer(5000);
-        
-        public static void InitializeTransactionCache() {
+        protected ConcurrentQueue<CachedTransaction> CachedTransactions { get; set; }
+        protected readonly System.Timers.Timer UncommittedFundTimer = new System.Timers.Timer(5000);
+
+        public JournalTransactionCache()
+        {
             CachedTransactions = new ConcurrentQueue<CachedTransaction>();
             UncommittedFundTimer.Elapsed += UncommittedFundTimer_Elapsed;
             UncommittedFundTimer.Start();
@@ -24,23 +24,21 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 		/// <summary>
 		/// Occurs when the cached payments timer needs to commit all the uncommitted transactions
 		/// </summary>
-        static void UncommittedFundTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
-            UncommittedFundTimer.Stop();
+        protected void UncommittedFundTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
             ProcessQueue();
-            UncommittedFundTimer.Start();
         }
 
 		/// <summary>
 		/// Adds a fund to the uncommitted cache
 		/// </summary>
-        public static void AddCachedTransaction(CachedTransaction Fund) {
+        public void AddCachedTransaction(CachedTransaction Fund) {
             CachedTransactions.Enqueue(Fund);
         }
 
 		/// <summary>
 		/// Processes all elements in the queue and transfers them
 		/// </summary>
-        static void ProcessQueue() {
+        protected void ProcessQueue() {
             List<CachedTransaction> aggregatedFunds = new List<CachedTransaction>();
             CachedTransaction fund;
 
@@ -61,8 +59,8 @@ namespace Wolfje.Plugins.SEconomy.Journal {
             }
 
             foreach (CachedTransaction aggregatedFund in aggregatedFunds) {
-                Journal.IBankAccount sourceAccount = SEconomyPlugin.RunningJournal.GetBankAccount(aggregatedFund.SourceBankAccountK);
-                Journal.IBankAccount destAccount = SEconomyPlugin.RunningJournal.GetBankAccount(aggregatedFund.DestinationBankAccountK);
+                Journal.IBankAccount sourceAccount = SEconomyPlugin.Instance.RunningJournal.GetBankAccount(aggregatedFund.SourceBankAccountK);
+				Journal.IBankAccount destAccount = SEconomyPlugin.Instance.RunningJournal.GetBankAccount(aggregatedFund.DestinationBankAccountK);
 
                 if (sourceAccount != null && destAccount != null) {
                     StringBuilder messageBuilder = new StringBuilder(aggregatedFund.Message);
@@ -83,6 +81,25 @@ namespace Wolfje.Plugins.SEconomy.Journal {
                 }
             }
         }
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing == true) {
+                UncommittedFundTimer.Elapsed -= UncommittedFundTimer_Elapsed;
+                UncommittedFundTimer.Stop();
+                UncommittedFundTimer.Dispose();
+                /*
+                 * Flush remaining items in the queue before releasing resources.
+                 */
+                ProcessQueue();
+            }
+        }
     }
 
 	/// <summary>
@@ -98,20 +115,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
         public CachedTransaction() {
 			this.Aggregations = 1;
-        }
-
-        /// <summary>
-        /// Creates a simple cached transaction to the world account
-        /// </summary>
-        public static CachedTransaction NewTransactionToWorldAccount() {
-            return new CachedTransaction() { DestinationBankAccountK = SEconomyPlugin.WorldAccount.BankAccountK };
-        }
-
-        /// <summary>
-        /// Creates a simple cached transaction from the world account
-        /// </summary>
-        public static CachedTransaction NewTranasctionFromWorldAccount() {
-            return new CachedTransaction() { SourceBankAccountK = SEconomyPlugin.WorldAccount.BankAccountK };
         }
     }
 

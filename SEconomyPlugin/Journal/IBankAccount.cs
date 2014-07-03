@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 namespace Wolfje.Plugins.SEconomy.Journal {
     public interface IBankAccount {
 
+		readonly object __transactionLock;
+
         ITransactionJournal OwningJournal {  get;}
 
         long BankAccountK { get; set; }

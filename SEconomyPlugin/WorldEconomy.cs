@@ -5,20 +5,20 @@ using System.Threading;
 
 using TerrariaApi.Server;
 
-namespace Wolfje.Plugins.SEconomy.WorldEconomy {
+namespace Wolfje.Plugins.SEconomy {
 
     /// <summary>
     /// World economy. Provides monetary gain and loss as a result of interaction in the world, including mobs and players
     /// </summary>
     public class WorldEconomy : IDisposable {
-		protected SEconomy Engine { get; set; }
+		protected SEconomy Parent { get; set; }
 
         /// <summary>
         /// Format for this dictionary:
         /// Key: NPC
         /// Value: A list of players who have done damage to the NPC
         /// </summary>
-        protected Dictionary<Terraria.NPC, List<PlayerDamage>> DamageDictionary = new Dictionary<Terraria.NPC, List<PlayerDamage>>();
+        private Dictionary<Terraria.NPC, List<PlayerDamage>> DamageDictionary = new Dictionary<Terraria.NPC, List<PlayerDamage>>();
 
         /// <summary>
         /// Format for this dictionary:
@@ -51,11 +51,11 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
 		public WorldEconomy(SEconomy parent)
 		{
 			this.WorldConfiguration = Configuration.WorldConfiguration.WorldConfig.LoadConfigurationFromFile("tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "SEconomy.WorldConfig.json");
-			this.Engine = parent;
+			this.Parent = parent;
 
-			ServerApi.Hooks.NetGetData.Register(Engine.PluginInstance, NetHooks_GetData);
-			ServerApi.Hooks.NetSendData.Register(Engine.PluginInstance, NetHooks_SendData);
-			ServerApi.Hooks.GameUpdate.Register(Engine.PluginInstance, Game_Update);
+			ServerApi.Hooks.NetGetData.Register(Parent.PluginInstance, NetHooks_GetData);
+			ServerApi.Hooks.NetSendData.Register(Parent.PluginInstance, NetHooks_SendData);
+			ServerApi.Hooks.GameUpdate.Register(Parent.PluginInstance, Game_Update);
 		}
 
 		public void Dispose()
@@ -67,12 +67,11 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
 		protected virtual void Dispose(bool disposing)
 		{
 			if (disposing) {
-				ServerApi.Hooks.NetGetData.Deregister(Engine.PluginInstance, NetHooks_GetData);
-				ServerApi.Hooks.NetSendData.Deregister(Engine.PluginInstance, NetHooks_SendData);
-				ServerApi.Hooks.GameUpdate.Deregister(Engine.PluginInstance, Game_Update);
+				ServerApi.Hooks.NetGetData.Deregister(Parent.PluginInstance, NetHooks_GetData);
+				ServerApi.Hooks.NetSendData.Deregister(Parent.PluginInstance, NetHooks_SendData);
+				ServerApi.Hooks.GameUpdate.Deregister(Parent.PluginInstance, Game_Update);
 			}
 		}
-
 
         protected void Game_Update(EventArgs args) {
             foreach (Terraria.NPC npc in Terraria.Main.npc) {
@@ -146,7 +145,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
                         continue;
                     }
 
-                    ePlayer = SEconomyPlugin.GetEconomyPlayerSafe(damage.Player.whoAmi);
+                    ePlayer = Parent.GetEconomyPlayerSafe(damage.Player.whoAmi);
                     rewardMoney = Convert.ToInt64(Math.Round(WorldConfiguration.MoneyPerDamagePoint * damage.Damage));
 
                     //load override by NPC type, this allows you to put a modifier on the base for a specific mob type.
@@ -162,7 +161,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
                             Amount = rewardMoney,
                             DestinationBankAccountK = ePlayer.BankAccount.BankAccountK,
                             Message = NPC.name,
-                            SourceBankAccountK = SEconomyPlugin.WorldAccount.BankAccountK
+							SourceBankAccountK = Parent.WorldAccount.BankAccountK
                         };
 
                         if ((NPC.boss && WorldConfiguration.AnnounceBossKillGains) || (!NPC.boss && WorldConfiguration.AnnounceNPCKillGains)) {
@@ -170,7 +169,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
                         }
 
                         //commit it to the transaction cache
-                        Journal.TransactionJournal.AddCachedTransaction(fund);
+						Parent.TransactionCache.AddCachedTransaction(fund);
                     }
                 }
             }
@@ -209,10 +208,12 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
             }
 
             if (deadPlayer != null && !deadPlayer.Group.HasPermission("seconomy.world.bypassdeathpenalty")) {
-                Economy.EconomyPlayer eDeadPlayer = SEconomyPlugin.GetEconomyPlayerSafe(DeadPlayerSlot);
+				Economy.EconomyPlayer eDeadPlayer = Parent.GetEconomyPlayerSafe(DeadPlayerSlot);
 
                 if (eDeadPlayer != null && eDeadPlayer.BankAccount != null) {
-                    Journal.CachedTransaction playerToWorldTx = Journal.CachedTransaction.NewTransactionToWorldAccount();
+                    Journal.CachedTransaction playerToWorldTx = new Journal.CachedTransaction() {
+						DestinationBankAccountK = Parent.WorldAccount.BankAccountK
+					};
 
                     //The penalty defaults to a percentage of the players' current balance.
                     Money penalty = (long)Math.Round(Convert.ToDouble(eDeadPlayer.BankAccount.Balance.Value) * (Convert.ToDouble(WorldConfiguration.DeathPenaltyPercentValue) * Math.Pow(10, -2)));
@@ -224,21 +225,23 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
                         playerToWorldTx.Amount = penalty;
 
                         //the dead player loses money unconditionally
-                        Journal.TransactionJournal.AddCachedTransaction(playerToWorldTx);
+                        Parent.TransactionCache.AddCachedTransaction(playerToWorldTx);
 
                         //but if it's a PVP death, the killer gets the losers penalty if enabled
                         if (PVPDeath && WorldConfiguration.MoneyFromPVPEnabled && WorldConfiguration.KillerTakesDeathPenalty) {
-                            Economy.EconomyPlayer eKiller = SEconomyPlugin.GetEconomyPlayerSafe(lastHitterSlot);
+                            Economy.EconomyPlayer eKiller = Parent.GetEconomyPlayerSafe(lastHitterSlot);
 
                             if (eKiller != null && eKiller.BankAccount != null) {
-                                Journal.CachedTransaction worldToPlayerTx = Journal.CachedTransaction.NewTranasctionFromWorldAccount();
+								Journal.CachedTransaction worldToPlayerTx = new Journal.CachedTransaction() {
+									SourceBankAccountK = Parent.WorldAccount.BankAccountK
+								};
 
                                 worldToPlayerTx.DestinationBankAccountK = eKiller.BankAccount.BankAccountK;
                                 worldToPlayerTx.Amount = penalty;
                                 worldToPlayerTx.Message = "killing " + eDeadPlayer.TSPlayer.Name;
                                 worldToPlayerTx.Options = Journal.BankAccountTransferOptions.AnnounceToReceiver;
 
-                                Journal.TransactionJournal.AddCachedTransaction(worldToPlayerTx);
+                                Parent.TransactionCache.AddCachedTransaction(worldToPlayerTx);
                             }
                         }
                     }
@@ -301,7 +304,7 @@ namespace Wolfje.Plugins.SEconomy.WorldEconomy {
     /// <summary>
     /// Damage structure, wraps a player slot and the amount of damage they have done.
     /// </summary>
-    public class PlayerDamage {
+    class PlayerDamage {
         public Terraria.Player Player;
         public int Damage;
     }

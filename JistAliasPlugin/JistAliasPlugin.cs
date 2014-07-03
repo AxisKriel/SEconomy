@@ -40,28 +40,28 @@ namespace Wolfje.Plugins.SEconomy.JistAliasPlugin {
 					//has the time elapsed greater than the cooldown period?
 					if (timeSinceLastUsedCommand.TotalSeconds >= alias.CooldownSeconds || e.Player.Group.HasPermission("aliascmd.bypasscooldown")) {
 						Money commandCost = 0;
-						Economy.EconomyPlayer ePlayer = SEconomyPlugin.GetEconomyPlayerSafe(e.Player.Index);
+						Economy.EconomyPlayer ePlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(e.Player.Index);
 
 						if (!string.IsNullOrEmpty(alias.Cost) && Money.TryParse(alias.Cost, out commandCost) && !e.Player.Group.HasPermission("aliascmd.bypasscost") && commandCost > 0) {
 							if (ePlayer.BankAccount != null) {
 
 								if (!ePlayer.BankAccount.IsAccountEnabled) {
-									e.Player.SendErrorMessageFormat("You cannot use this command because your account is disabled.");
+									e.Player.SendErrorMessage("You cannot use this command because your account is disabled.");
 								} else if (ePlayer.BankAccount.Balance >= commandCost) {
 
 									//Take money off the player, and indicate that this is a payment for something tangible.
-									Journal.BankTransferEventArgs trans = ePlayer.BankAccount.TransferTo(SEconomyPlugin.WorldAccount, commandCost, Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPayment, "", string.Format("AC: {0} cmd {1}", ePlayer.TSPlayer.Name, alias.CommandAlias));
+									Journal.BankTransferEventArgs trans = ePlayer.BankAccount.TransferTo(SEconomyPlugin.Instance.WorldAccount, commandCost, Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPayment, "", string.Format("AC: {0} cmd {1}", ePlayer.TSPlayer.Name, alias.CommandAlias));
 									if (trans.TransferSucceeded) {
 										//DoCommands(alias, ePlayer.TSPlayer, e.Parameters);
 										//Jist.JistPlugin.CallScriptFunction(alias.func, ePlayer.TSPlayer, e.Parameters);
 									} else {
-										e.Player.SendErrorMessageFormat("Your payment failed.");
+										e.Player.SendErrorMessage("Your payment failed.");
 									}
 								} else {
-									e.Player.SendErrorMessageFormat("This command costs {0}. You need {1} more to be able to use this.", commandCost.ToLongString(), ((Money)(ePlayer.BankAccount.Balance - commandCost)).ToLongString());
+									e.Player.SendErrorMessage("This command costs {0}. You need {1} more to be able to use this.", commandCost.ToLongString(), ((Money)(ePlayer.BankAccount.Balance - commandCost)).ToLongString());
 								}
 							} else {
-								e.Player.SendErrorMessageFormat("This command costs money and you don't have a bank account.  Please log in first.");
+								e.Player.SendErrorMessage("This command costs money and you don't have a bank account.  Please log in first.");
 							}
 						} else {
 							//Command is free
@@ -78,7 +78,7 @@ namespace Wolfje.Plugins.SEconomy.JistAliasPlugin {
 						}
 
 					} else {
-						e.Player.SendErrorMessageFormat("{0}: You need to wait {1:0} more seconds to be able to use that.", alias.CommandAlias, (alias.CooldownSeconds - timeSinceLastUsedCommand.TotalSeconds));
+						e.Player.SendErrorMessage("{0}: You need to wait {1:0} more seconds to be able to use that.", alias.CommandAlias, (alias.CooldownSeconds - timeSinceLastUsedCommand.TotalSeconds));
 					}
 				}
 			}

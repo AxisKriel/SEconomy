@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace Wolfje.Plugins.SEconomy {
     public class Config {
+		protected string path;
 
         public bool BankAccountsEnabled = true;
         public string StartingMoney = "0";
@@ -18,58 +19,60 @@ namespace Wolfje.Plugins.SEconomy {
         public static string JournalPath = Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.journal.xml.gz";
 
         public int JournalBackupMinutes = 1;
-
         public MoneyProperties MoneyConfiguration = new MoneyProperties();
-
         public bool EnableProfiler = false;
+
+		public Config(string path)
+		{
+			this.path = path;
+		}
 
         /// <summary>
         /// Loads a configuration file and deserializes it from JSON
         /// </summary>
-        public static Config LoadConfigurationFromFile(string Path) {
+        public static Config FromFile(string Path) {
             Config config = null;
 
-            try {
-                string fileText = System.IO.File.ReadAllText(Path);
+			if (!System.IO.Directory.Exists(Config.BaseDirectory)) {
+				try {
+					System.IO.Directory.CreateDirectory(Config.BaseDirectory);
+				} catch {
+					TShockAPI.Log.ConsoleError("seconomy configuration: Cannot create base directory: {0}", Config.BaseDirectory);
+					return null;
+				}
+			}
 
-                config = JsonConvert.DeserializeObject<Config>(fileText);
-
-            } catch (Exception ex) {
-                if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
-                    TShockAPI.Log.ConsoleError("seconomy configuration: Cannot find file or directory. Creating new one.");
-
-                    config = Config.NewSampleConfiguration();
-
-                    config.SaveConfiguration(Path);
-
-                } else if (ex is System.Security.SecurityException) {
-                    TShockAPI.Log.ConsoleError("seconomy configuration: Access denied reading file " + Path);
-                } else {
-                    TShockAPI.Log.ConsoleError("seconomy configuration: error " + ex.ToString());
-                }
-            }
-
+			try {
+				string fileText = System.IO.File.ReadAllText(Path);
+				config = JsonConvert.DeserializeObject<Config>(fileText);
+			} catch (Exception ex) {
+				if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
+					TShockAPI.Log.ConsoleError("seconomy configuration: Cannot find file or directory. Creating new one.");
+					config = new Config(Path);
+					config.SaveConfiguration();
+				} else if (ex is System.Security.SecurityException) {
+					TShockAPI.Log.ConsoleError("seconomy configuration: Access denied reading file " + Path);
+				} else {
+					TShockAPI.Log.ConsoleError("seconomy configuration: error " + ex.ToString());
+				}
+			}
             return config;
         }
 
-        public static Config NewSampleConfiguration() {
-            Config newConfig = new Config();
-            return newConfig;
-        }
 
-        public void SaveConfiguration(string Path) {
+        public void SaveConfiguration() {
             try {
                 string config = JsonConvert.SerializeObject(this, Formatting.Indented);
-                System.IO.File.WriteAllText(Path, config);
+                System.IO.File.WriteAllText(path, config);
             } catch (Exception ex) {
 
                 if (ex is System.IO.DirectoryNotFoundException) {
-                    TShockAPI.Log.ConsoleError("seconomy config: save directory not found: " + Path);
+					TShockAPI.Log.ConsoleError("seconomy config: save directory not found: " + path);
 
                 } else if (ex is UnauthorizedAccessException || ex is System.Security.SecurityException) {
-                    TShockAPI.Log.ConsoleError("seconomy config: Access is denied to Vault config: " + Path);
+					TShockAPI.Log.ConsoleError("seconomy config: Access is denied to config: " + path);
                 } else {
-                    TShockAPI.Log.ConsoleError("seconomy config: Error reading file: " + Path);
+					TShockAPI.Log.ConsoleError("seconomy config: Error reading file: " + path);
                     throw;
                 }
             }

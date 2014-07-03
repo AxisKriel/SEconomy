@@ -10,6 +10,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         ITransactionJournal owningJournal;
         List<ITransaction> transactions;
 
+		public readonly object __transactionLock = new object();
 
         public XmlBankAccount(ITransactionJournal OwningJournal) {
             this.owningJournal = OwningJournal;
@@ -17,7 +18,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         }
 
         #region "Public Properties"
-
         public long BankAccountK { get; set; }
 
         public string OldBankAccountK {
@@ -52,7 +52,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
         public Economy.EconomyPlayer Owner {
             get {
-                return SEconomyPlugin.GetEconomyPlayerByBankAccountNameSafe(this.UserAccountName);
+                return OwningJournal.SEconomyInstance.GetEconomyPlayerByBankAccountNameSafe(this.UserAccountName);
             }
         }
 
@@ -89,14 +89,14 @@ namespace Wolfje.Plugins.SEconomy.Journal {
             return owningJournal.TransferBetween(this, Account, Amount, Options, TransactionMessage, JournalMessage);
         }
 
-        public System.Threading.Tasks.Task<BankTransferEventArgs> TransferToAsync(int Index, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
-            Economy.EconomyPlayer ePlayer = SEconomyPlugin.GetEconomyPlayerSafe(Index);
+        public async Task<BankTransferEventArgs> TransferToAsync(int Index, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
+            Economy.EconomyPlayer ePlayer = OwningJournal.SEconomyInstance.GetEconomyPlayerSafe(Index);
 
-            return Task.Factory.StartNew(() => TransferTo(ePlayer.BankAccount, Amount, Options, TransactionMessage, JournalMessage));
+            return await Task.Factory.StartNew(() => TransferTo(ePlayer.BankAccount, Amount, Options, TransactionMessage, JournalMessage));
         }
 
-        public System.Threading.Tasks.Task<BankTransferEventArgs> TransferToAsync(IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
-            return Task.Factory.StartNew(() => TransferTo(ToAccount, Amount, Options, TransactionMessage, JournalMessage));
+        public async Task<BankTransferEventArgs> TransferToAsync(IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
+            return await Task.Factory.StartNew(() => TransferTo(ToAccount, Amount, Options, TransactionMessage, JournalMessage));
         }
 
         public ITransaction AddTransaction(ITransaction Transaction) {
@@ -108,13 +108,17 @@ namespace Wolfje.Plugins.SEconomy.Journal {
                 }
             }
 
-            this.transactions.Add(Transaction);
+			lock (__transactionLock) {
+				this.transactions.Add(Transaction);
+			}
 
             return Transaction;
         }
 
         public void ResetAccountTransactions(long BankAccountK) {
-            this.Transactions.Clear();
+			lock (__transactionLock) {
+				this.Transactions.Clear();
+			}
 
             this.SyncBalance();
         }

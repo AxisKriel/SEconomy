@@ -1,0 +1,13 @@
+﻿Changelog
+---
+
+Update 15
+[-] Removed old EPRS import code
+[+] Added polygamy support to SEconomy
+[-] removed statics in SEconomy plugin
+[+] Added disposable support to all components
+[-] Removed TSPlayer extensions as they are in public code
+[c] Changed SEconomy instance to Lazy<T> with built-in singleton double locking
+[c] Changed most ContinueWith delegates to awaits in .net 4.5
+[-] Removed old dead profiler code
+[c] Rewrote Configuration interface

@@ -9,124 +9,79 @@ namespace Wolfje.Plugins.SEconomy {
 		public Journal.ITransactionJournal RunningJournal { get; internal set; }
 		public Config Configuration { get; private set; }
 		public SEconomyPlugin PluginInstance { get; set; }
-		public Journal.IBankAccount WorldAccount { get; protected set; }
-		public WorldEconomy.WorldEconomy WorldEconomy { get; protected set; }
-		
-		protected List<Economy.EconomyPlayer> EconomyPlayers { get; set; }
-		protected System.Timers.Timer PayRunTimer { get; set; }
-		protected System.Timers.Timer JournalBackupTimer { get; set; }
 
-		internal Performance.Profiler Profiler = new Performance.Profiler();
+		public Journal.JournalTransactionCache TransactionCache { get; set; }
+		public Journal.IBankAccount WorldAccount { get; internal set; }
+		public WorldEconomy WorldEc { get; internal set; }
+		public List<Economy.EconomyPlayer> EconomyPlayers { get; internal set; }
 
+		internal System.Timers.Timer PayRunTimer { get; set; }
+		internal EventHandlers EventHandlers { get; set; }
+		internal ChatCommands ChatCommands { get; set; }
+        
 		public SEconomy(SEconomyPlugin PluginInstance)
 		{
 			this.PluginInstance = PluginInstance;
-			TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
 		}
 
 		#region "Event Handlers"
-		protected virtual void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
-		{
-			if (e.Observed == true) {
-				return;
-			}
-			
-			TShockAPI.Log.ConsoleError("seconomy async: error occurred on a task thread: " + e.Exception.Flatten().ToString());
-			e.SetObserved();
-		}
+	
 		#endregion
 
 		#region "Loading and setup"
 		public int LoadSEconomy()
 		{
-			if (LoadConfiguration() < 0 || LoadJournal() < 0
-				|| LoadJournalBackups() < 0 || LoadWorldEconomy() < 0) {
-				TShockAPI.Log.ConsoleError("Initialization of SEconomy failed.");
-				return -1;
-			}
-
+            try {
+                this.Configuration = Config.FromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
+                this.RunningJournal = new Journal.XmlTransactionJournal(this, Config.JournalPath);
+                this.WorldEc = new WorldEconomy(this);
+                this.EventHandlers = new EventHandlers(this);
+                this.ChatCommands = new ChatCommands(this);
+                this.TransactionCache = new Journal.JournalTransactionCache();
+            }
+            catch (Exception ex) {
+                TShockAPI.Log.ConsoleError("Initialization of SEconomy failed: " + ex.ToString());
+                return -1;
+            }
 
 			return 0;
+		}
+
+		#endregion
+
+		/// <summary>
+		/// Gets an economy-enabled player by their player name. 
+		/// </summary>
+		public Economy.EconomyPlayer GetEconomyPlayerByBankAccountNameSafe(string Name)
+		{
+			if (EconomyPlayers == null) {
+				return null;
+			}
+
+			return EconomyPlayers.FirstOrDefault(i => (i.BankAccount != null) && i.BankAccount.UserAccountName == Name);
 		}
 
 		/// <summary>
-		/// Loads SEconomy configuration from disk.
+		/// Gets an economy-enabled player by their index.  This method is thread-safe.
 		/// </summary>
-		/// <returns>0 if the operation was successful, less otherwise.</returns>
-		protected int LoadConfiguration()
+		public Economy.EconomyPlayer GetEconomyPlayerSafe(int Id)
 		{
-			try {
-				this.Configuration = Config.LoadConfigurationFromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
-			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError("LoadConfiguration: Exception loading configuration: {0}", ex.ToString());
-				return -1;
+			if (Id < 0) {
+				return new Economy.EconomyPlayer(-1) {
+					BankAccount = WorldAccount
+				};
 			}
-			return 0;
+
+			return this.EconomyPlayers.FirstOrDefault(i => i.Index == Id);
 		}
 
 		/// <summary>
-		/// Loads the journal into memory from XML.
+		/// Gets an economy-enabled player by their player name. 
 		/// </summary>
-		/// <returns>0 if the operation was successful, less otherwise.</returns>
-		protected int LoadJournal()
+		public Economy.EconomyPlayer GetEconomyPlayerSafe(string Name)
 		{
-			try {
-				this.RunningJournal = new Journal.XmlTransactionJournal(new Dictionary<string, object> {
-                    { Journal.XmlTransactionJournal.kXMLTransactionJournalSavePath, Config.JournalPath }
-                });
-
-				RunningJournal.LoadJournal();
-
-				//RunningJournal.BankTransferCompleted += BankAccount_BankTransferCompleted;
-			} catch {
-				TShockAPI.Log.ConsoleError("SEconomy: xml initialization failed.");
-				return -1;
-			}
-
-			return 0;
+			return EconomyPlayers.FirstOrDefault(i => i.TSPlayer.Name == Name);
 		}
-
-		protected int LoadJournalBackups()
-		{
-			JournalBackupTimer = new System.Timers.Timer(Configuration.JournalBackupMinutes * 60000);
-			//JournalBackupTimer.Elapsed += JournalBackupTimer_Elapsed;
-			JournalBackupTimer.Start();
-
-			return 0;
-		}
-
-		protected int LoadHooks()
-		{
-			return 0;
-		}
-
-		protected int LoadWorldEconomy()
-		{
-			try {
-				this.WorldEconomy = new WorldEconomy.WorldEconomy(this);
-			} catch (Exception) {
-				TShockAPI.Log.ConsoleError("seconomy init: WorldEconomy failed to initialize.");
-				return -1;
-			}
-			return 0;
-		}
-		#endregion
-
-		#region "Unloading"
-		protected int UnloadHooks()
-		{
-			//TShockAPI.Hooks.PlayerHooks.PlayerPostLogin -= PlayerHooks_PlayerPostLogin;
-
-			//ServerApi.Hooks.GamePostInitialize.Deregister(this, GameHooks_PostInitialize);
-			//ServerApi.Hooks.ServerJoin.Deregister(this, ServerHooks_Join);
-			//ServerApi.Hooks.ServerLeave.Deregister(this, ServerHooks_Leave);
-			//ServerApi.Hooks.NetGetData.Deregister(this, NetHooks_GetData);
-			//SEconomyPlugin.RunningJournal.BankTransferCompleted -= BankAccount_BankTransferCompleted;
-
-			TaskScheduler.UnobservedTaskException -= TaskScheduler_UnobservedTaskException;
-			return 0;
-		}
-		#endregion
 
 		#region "IDisposable"
 		public void Dispose()
@@ -138,10 +93,14 @@ namespace Wolfje.Plugins.SEconomy {
 		protected virtual void Dispose(bool disposing)
 		{
 			if (disposing == true) {
-				UnloadHooks();
+				this.EventHandlers.Dispose();
+				this.ChatCommands.Dispose();
+				this.WorldEc.Dispose();
+                this.TransactionCache.Dispose();
+				this.RunningJournal.Dispose();
+				this.Configuration = null;
 			}
 
-			//HaltIfBackup();
 		}
 		#endregion
 	}

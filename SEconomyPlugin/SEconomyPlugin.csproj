@@ -15,11 +15,12 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;__PREVIEW</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -50,13 +51,13 @@
     <Compile Include="Configuration\MoneyProperties.cs" />
     <Compile Include="Configuration\WorldConfiguration\WorldConfig.cs" />
     <Compile Include="ConsoleEx.cs" />
-    <Compile Include="DataImporters\EPRSImport.cs" />
     <Compile Include="Economy\EconomyPlayer.cs" />
     <Compile Include="Economy\Money.cs" />
     <Compile Include="Enumerations.cs" />
+    <Compile Include="EventHandlers.cs" />
     <Compile Include="Extensions\String.Extensions.cs" />
     <Compile Include="Extensions\TShockCommand.Extensions.cs" />
-    <Compile Include="Extensions\TSPlayer.Extensions.cs" />
+    <Compile Include="Extensions\Type.Extensions.cs" />
     <Compile Include="Forms\CAccountManagementWnd.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -80,18 +81,17 @@
     <Compile Include="Journal\PendingTransactionEventArgs.cs" />
     <Compile Include="Journal\XMLJournal\XmlBankAccount.cs" />
     <Compile Include="Journal\XMLJournal\XmlTransaction.cs" />
-    <Compile Include="Journal\XMLJournal\XmlTransactionJournal.CachedTransaction.cs" />
+    <Compile Include="Journal\JournalTransactionCache.cs" />
     <Compile Include="Journal\XMLJournal\XmlTransactionJournal.cs" />
     <Compile Include="Packets\DamageNPC.cs" />
     <Compile Include="Packets\PacketMarshal.cs" />
     <Compile Include="Packets\StrikeNPC.cs" />
     <Compile Include="Packets\TerrariaPacket.cs" />
     <Compile Include="Packets\UpdateNPC.cs" />
-    <Compile Include="Performance\Profiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SEconomy.cs" />
     <Compile Include="SEconomyPlugin.cs" />
-    <Compile Include="WorldEconomy\WorldEconomy.cs" />
+    <Compile Include="WorldEconomy.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\References\TShock\TerrariaServerAPI\TerrariaAPI-Server.csproj">
@@ -112,9 +112,13 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="changes.txt" />
     <Content Include="Permissions.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /y /i "$(TargetPath)" "$(SolutionDir)..\ServerInstance4.2\ServerPlugins"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

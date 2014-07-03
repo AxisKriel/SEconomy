@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using TerrariaApi.Server;
 using Wolfje.Plugins.SEconomy;
+using Wolfje.Plugins.SEconomy.Extensions;
 using System.Threading.Tasks;
 
 
@@ -104,7 +105,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 					}
 				});
 			} else {
-				args.Player.SendErrorMessageFormat("aliascmd: usage: /aliascmd reload: reloads the AliasCmd configuration file.");
+				args.Player.SendErrorMessage("aliascmd: usage: /aliascmd reload: reloads the AliasCmd configuration file.");
 			}
 		}
 
@@ -157,13 +158,13 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 
 				//has the time elapsed greater than the cooldown period?
 				if (timeSinceLastUsedCommand.TotalSeconds >= alias.CooldownSeconds || e.CommandArgs.Player.Group.HasPermission("aliascmd.bypasscooldown")) {
-					e.CommandArgs.Player.SendErrorMessageFormat("{0}: You need to wait {1:0} more seconds to be able to use that.", alias.CommandAlias, (alias.CooldownSeconds - timeSinceLastUsedCommand.TotalSeconds));
+					e.CommandArgs.Player.SendErrorMessage("{0}: You need to wait {1:0} more seconds to be able to use that.", alias.CommandAlias, (alias.CooldownSeconds - timeSinceLastUsedCommand.TotalSeconds));
 					return;
 				}
 
-				ePlayer = SEconomyPlugin.GetEconomyPlayerSafe(e.CommandArgs.Player.Index);
+				ePlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(e.CommandArgs.Player.Index);
 				if (ePlayer == null || ePlayer.BankAccount == null) {
-					e.CommandArgs.Player.SendErrorMessageFormat("This command costs money and you don't have a bank account.  Please log in first.");
+					e.CommandArgs.Player.SendErrorMessage("This command costs money and you don't have a bank account.  Please log in first.");
 					return;
 				}
 
@@ -173,31 +174,31 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 				}
 
 				if (Money.TryParse(alias.Cost, out commandCost) == false) {
-					e.CommandArgs.Player.SendErrorMessageFormat("This command has an invalid cost, please seek your administrator.");
+					e.CommandArgs.Player.SendErrorMessage("This command has an invalid cost, please seek your administrator.");
 					return;
 				}
 
 				if (ePlayer.BankAccount.IsAccountEnabled == false) {
-					e.CommandArgs.Player.SendErrorMessageFormat("This command costs money and your account is disabled.");
+					e.CommandArgs.Player.SendErrorMessage("This command costs money and your account is disabled.");
 					return;
 				}
 
 				if (ePlayer.BankAccount.Balance < commandCost) {
 					Money difference = commandCost - ePlayer.BankAccount.Balance;
-					e.CommandArgs.Player.SendErrorMessageFormat("This command costs {0}. You need {1} more to be able to use this.", commandCost.ToLongString(), difference.ToLongString());
+					e.CommandArgs.Player.SendErrorMessage("This command costs {0}. You need {1} more to be able to use this.", commandCost.ToLongString(), difference.ToLongString());
 				}
 
 				try {
 					//Take money off the player, and indicate that this is a payment for something tangible.
-					Journal.BankTransferEventArgs trans = ePlayer.BankAccount.TransferTo(SEconomyPlugin.WorldAccount, commandCost, Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPayment, "", string.Format("AC: {0} cmd {1}", ePlayer.TSPlayer.Name, alias.CommandAlias));
+					Journal.BankTransferEventArgs trans = ePlayer.BankAccount.TransferTo(SEconomyPlugin.Instance.WorldAccount, commandCost, Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPayment, "", string.Format("AC: {0} cmd {1}", ePlayer.TSPlayer.Name, alias.CommandAlias));
 					if (trans.TransferSucceeded) {
 						DoCommands(alias, ePlayer.TSPlayer, e.CommandArgs.Parameters);
 					} else {
-						e.CommandArgs.Player.SendErrorMessageFormat("Your payment failed.");
+						e.CommandArgs.Player.SendErrorMessage("Your payment failed.");
 						return;
 					}
 				} catch (Exception ex) {
-					e.CommandArgs.Player.SendErrorMessageFormat("An error occured in the alias.");
+					e.CommandArgs.Player.SendErrorMessage("An error occured in the alias.");
 					TShockAPI.Log.ConsoleError("aliascmd error: {0} tried to execute alias {1} which failed with error {2}: {3}", e.CommandArgs.Player.Name, e.CommandIdentifier, ex.Message, ex.ToString());
 					return;
 				}
@@ -337,7 +338,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 
 					foreach (Match match in runasFunctionRegex.Matches(mangledString)) {
 						string impersonatedName = match.Groups[2].Value;
-						Economy.EconomyPlayer impersonatedPlayer = SEconomyPlugin.GetEconomyPlayerSafe(impersonatedName);
+						Economy.EconomyPlayer impersonatedPlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(impersonatedName);
 
 						if (impersonatedPlayer != null) {
 							string commandToRun = match.Groups[3].Value;
@@ -354,7 +355,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 					foreach (Match match in msgRegex.Matches(mangledString)) {
 						string msgTarget = match.Groups[2].Value.Trim();
 						string message = match.Groups[3].Value.Trim();
-						Economy.EconomyPlayer destinationPlayer = SEconomyPlugin.GetEconomyPlayerSafe(msgTarget);
+						Economy.EconomyPlayer destinationPlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(msgTarget);
 
 						if (destinationPlayer != null) {
 							//custom command, skip forwarding of the command to the tshock executer
@@ -410,19 +411,25 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 		/// </summary>
 		public static bool HandleCommandWithoutPermissions(TShockAPI.TSPlayer player, string text)
 		{
+			IEnumerable<TShockAPI.Command> cmds;
+			List<string> args;
+			string cmdName;
+			string cmdText;
+
 			if (string.IsNullOrEmpty(text)) {
 				return false;
 			}
-			string cmdText = text.Remove(0, 1);
-			var args = SEconomyPlugin.CallPrivateMethod<List<string>>(typeof(TShockAPI.Commands), true, "ParseParameters", cmdText);
+			
+			cmdText = text.Remove(0, 1);
+			args = typeof(TShockAPI.Commands).CallPrivateMethod<List<string>>(true, "ParseParameters", cmdText);
 
-			if (args.Count < 1)
+			if (args.Count < 1) {
 				return false;
+			}
 
-			string cmdName = args[0].ToLower();
+			cmdName = args[0].ToLower();
 			args.RemoveAt(0);
-
-			IEnumerable<TShockAPI.Command> cmds = TShockAPI.Commands.ChatCommands.Where(c => c.HasAlias(cmdName));
+			cmds = TShockAPI.Commands.ChatCommands.Where(c => c.HasAlias(cmdName));
 
 			if (Enumerable.Count(cmds) == 0) {
 				if (player.AwaitingResponse.ContainsKey(cmdName)) {
@@ -434,6 +441,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 				player.SendErrorMessage("Invalid command entered. Type /help for a list of valid commands.");
 				return true;
 			}
+
 			foreach (TShockAPI.Command cmd in cmds) {
 				if (!cmd.AllowServer && !player.RealPlayer) {
 					player.SendErrorMessage("You must use this command in-game.");
@@ -443,6 +451,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 					cmd.RunWithoutPermissions(cmdText, player, args);
 				}
 			}
+
 			return true;
 		}
 
