@@ -10,8 +10,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         ITransactionJournal owningJournal;
         List<ITransaction> transactions;
 
-		public readonly object __transactionLock = new object();
-
         public XmlBankAccount(ITransactionJournal OwningJournal) {
             this.owningJournal = OwningJournal;
             this.transactions = new List<ITransaction>();
@@ -108,7 +106,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
                 }
             }
 
-			lock (__transactionLock) {
+			lock (Transactions) {
 				this.transactions.Add(Transaction);
 			}
 
@@ -116,7 +114,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         }
 
         public void ResetAccountTransactions(long BankAccountK) {
-			lock (__transactionLock) {
+			lock (Transactions) {
 				this.Transactions.Clear();
 			}
 

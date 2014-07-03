@@ -317,7 +317,7 @@ A Transaction has these following attributes:
 					bankAccountNode.SetAttributeValue("Description", account.Description);
 					bankAccountNode.SetAttributeValue("BankAccountK", account.BankAccountK);
 
-					lock (account.__transactionLock) {
+					lock (account.Transactions) {
 						foreach (ITransaction transaction in account.Transactions) {
 							XElement transactionNode = new XElement("Transaction");
 
