@@ -18,7 +18,7 @@ namespace Wolfje.Plugins.SEconomy {
 		internal System.Timers.Timer PayRunTimer { get; set; }
 		internal EventHandlers EventHandlers { get; set; }
 		internal ChatCommands ChatCommands { get; set; }
-        
+
 		public SEconomy(SEconomyPlugin PluginInstance)
 		{
 			this.PluginInstance = PluginInstance;
@@ -30,6 +30,7 @@ namespace Wolfje.Plugins.SEconomy {
 		public int LoadSEconomy()
 		{
             try {
+				
                 this.Configuration = Config.FromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
                 this.RunningJournal = new Journal.XmlTransactionJournal(this, Config.JournalPath);
                 this.WorldEc = new WorldEconomy(this);
@@ -39,7 +40,7 @@ namespace Wolfje.Plugins.SEconomy {
 				this.EconomyPlayers = new List<Economy.EconomyPlayer>();
             }
             catch (Exception ex) {
-                TShockAPI.Log.ConsoleError("Initialization of SEconomy failed: " + ex.ToString());
+                TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(0, "Initialization of SEconomy failed: ") + ex.ToString());
                 return -1;
             }
 
@@ -54,7 +55,7 @@ namespace Wolfje.Plugins.SEconomy {
 		{
 			WorldAccount = RunningJournal.GetWorldAccount();
 			await WorldAccount.SyncBalanceAsync();
-			TShockAPI.Log.ConsoleInfo(string.Format("SEconomy: world account: paid {0} to players.", WorldAccount.Balance.ToLongString()));
+			TShockAPI.Log.ConsoleInfo(string.Format(SEconomyPlugin.Locale.StringOrDefault(1, "SEconomy: world account: paid {0} to players."), WorldAccount.Balance.ToLongString()));
 
 			PayRunTimer.Start();
 		}

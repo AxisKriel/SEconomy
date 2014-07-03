@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Language Name="English (Australia)">
+	<s>Initialization of SEconomy failed:</s>
+	<s>SEconomy: world account: paid {0} to players.</s>
+	<s>blah</s>
+	<!-- SEconomyPlugin.cs: 3-12 -->
+	<s>SEconomy v{0} by Wolfje</s>
+	<s> * http://plugins.tw.id.au</s>
+	<s> * /sec[onomy] reload|rl - Reloads SEconomy</s>
+	<s> * /sec[onomy] stop - Stops and unloads SEconomy</s>
+	<s> * /sec[onomy] start - Reloads SEconomy</s>
+	<s>SEconomy is reloaded.</s>
+	<s>seconomy stop: SEconomy is already stopped. Use /sec start to start</s>
+	<s>SEconomy is stopped.</s>
+	<s>seconomy stop: SEconomy is already started. Use /sec stop to stop.</s>
+	<s>SEconomy failed to initialize, and will be unavailable for this session.</s>
+	<s>SEconomy has started.</s>
+	<!-- EventHandlers.cs: 13-26 -->
+	<s>You killed {0} and gained {1}</s>
+	<s>{0} killed you and you lost {1}.</s>
+	<s>You {3} {0} from {1}. Transaction # {2}</s>
+	<s>The server</s>
+	<s>received</s>
+	<s>sent</s>
+	<s>You {0} {1}{2}</s>
+	<s>paid</s>
+	<s>got paid</s>
+	<s>lost</s>
+	<s>gained</s>
+	<s> for </s>
+	<s>You have {0}.</s>
+	<s>seconomy async: error occurred on a task thread: </s>
+	<!-- ChatCommands.cs: 27-57 -->
+	<s>This server is running SEconomy v{0} by Wolfje</s>
+	<s>"Download here: http://plugins.tw.id.au"</s>
+	<s>You can:</s>
+	<s>* View your balance with /bank bal</s>
+	<s>* Trade players with /bank pay [player] [amount]</s>
+	<s>* View other people's balance with /bank bal [player]</s>
+	<s>* Spawn/delete money with /bank give|take [player] [amount]</s>
+	<s>* Spawn the account manager GUI on the server with /bank mgr</s>
+	<s>* Save the journal with /bank savejournal</s>
+	<s>* Load the journal with /bank loadjournal</s>
+	<s>* Compress the journal with /bank squashjournal</s>
+	<s>seconomy reset: Resetting {0}'s account.</s>
+	<s>seconomy reset:  Reset complete."</s>
+	<s>seconomy reset: Cannot find player \"{0}\" or no bank account found."</s>
+	<s>seconomy reset: You do not have permission to perform this command.</s>
+	<s>bank balance: your account is disabled</s>
+	<s>balance: {0} {1}</s>
+	<s>(disabled)</s>
+	<s>bank balance: Cannot find player or no bank account.</s>
+	<s>seconomy mgr: opening bank manager window</s>
+	<s>seconomy mgr: Window closed because it crashed:</s>
+	<s>seconomy management: window closed</s>
+	<s>Only the console can do that.</s>
+	<s>seconomy xml: Backing up transaction journal.</s>
+	<s>seconomy xml: Loading transaction journal from file</s>
+	<s>bank squashjournal: You do not have permission to perform this command.</s>
+	<s>Cannot find player by the name of {0}.</s>
+	<s>bank give: \"{0}\" isn't a valid amount of money.</s>
+	<s>Usage: /bank pay [Player] [Amount]</s>
+	<s>bank pay: You don't have permission to do that.</s>
+	<s>Usage: /bank give|take [Player] [Amount]</s>
+	<s>bank give: You don't have permission to do that.</s>
+</Language>
