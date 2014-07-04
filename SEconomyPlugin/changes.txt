@@ -2,6 +2,7 @@
 ---
 
 Update 15
+
 [+] Added polygamy support to SEconomy
 [+] Added disposable support to all components
 [+] New command: /sec[onomy] rl|reload: Completely shuts down and refreshes SEconomy
@@ -10,11 +11,13 @@ Update 15
 [+] Added website and author information to /bank and /sec
 [+] Localization support
 [+] en-AU language
+[*] localisation viewer program called localeviewer.exe for translators
 [-] Removed old EPRS import code
 [-] Removed old dead profiler code
-[-] Removed statics in SEconomy plugin
-[-] Removed TSPlayer extensions as they are in public code
+[-] Removed static members in SEconomy plugin
+[-] Removed TSPlayer extensions as they are now in public code
 [-] Removed /bank enable|disable because it has forever done nothing and nobody even cares
-[c] Changed SEconomy instance to Lazy<T> with built-in singleton double locking
 [c] Changed most ContinueWith delegates to awaits in .net 4.5
 [c] Rewrote Configuration interface
+[c] WorldEconomy now does not hand out more rewards than it's supposed to
+[c] WorldEconomy now takes into account the correct damage algorithm

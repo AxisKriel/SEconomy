@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 using TerrariaApi.Server;
+using Terraria;
 
 namespace Wolfje.Plugins.SEconomy {
 
@@ -41,6 +42,11 @@ namespace Wolfje.Plugins.SEconomy {
         /// Synch object for access to the packet handler critical sections, forcing packets to be marshalled in a serialized manner.
         /// </summary>
         protected readonly object __packetHandlerMutex = new object();
+
+		/// <summary>
+		/// Synch object for NPC damage, forcing NPC damages to be serialized
+		/// </summary>
+		protected static readonly object __NPCDamageMutex = new object();
 
         /// <summary>
         /// World configuration node, from TShock\SEconomy\SEconomy.WorldConfig.json
@@ -89,32 +95,34 @@ namespace Wolfje.Plugins.SEconomy {
         /// <summary>
         /// Adds damage done by a player to an NPC slot.  When the NPC dies the rewards for it will fill out.
         /// </summary>
-        protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage) {
+        protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage, bool crit = false) {
             List<PlayerDamage> damageList = null;
             PlayerDamage playerDamage = null;
+			double dmg;
 
-            if (Player == null || NPC.active == false) {
-                return;
-            }
+			lock (__NPCDamageMutex) {
+				if (Player == null || NPC.active == false || NPC.life <= 0) {
+					return;
+				}
 
-            lock (__dictionaryLock) {
-                if (DamageDictionary.ContainsKey(NPC)) {
-                    damageList = DamageDictionary[NPC];
-                } else {
-                    damageList = new List<PlayerDamage>(1);
-                    DamageDictionary.Add(NPC, damageList);
-                }
-            }
+				if (DamageDictionary.ContainsKey(NPC)) {
+					damageList = DamageDictionary[NPC];
+				} else {
+					damageList = new List<PlayerDamage>(1);
+					DamageDictionary.Add(NPC, damageList);
+				}
 
-            playerDamage = damageList.FirstOrDefault(i => i.Player == Player);
-            if (playerDamage == null) {
-                playerDamage = new PlayerDamage() { Player = Player };
-                damageList.Add(playerDamage);
-            }
+				if ((playerDamage = damageList.FirstOrDefault(i => i.Player == Player)) == null) {
+					playerDamage = new PlayerDamage() { Player = Player };
+					damageList.Add(playerDamage);
+				}
 
-            //increment the damage into either the new or existing slot damage in the dictionary
-            //If the damage is greater than the NPC's health then it was a one-shot kill and the damage should be capped.
-            playerDamage.Damage += NPC != null && Damage > NPC.lifeMax ? NPC.lifeMax : Damage;
+				if ((dmg = (crit ? 2 : 1) * Main.CalculateDamage(Damage, NPC.ichor ? NPC.defense - 20 : NPC.defense)) > NPC.life) {
+					dmg = NPC.life;
+				}
+
+				playerDamage.Damage += dmg;
+			}
         }
 
         /// <summary>
@@ -125,54 +133,53 @@ namespace Wolfje.Plugins.SEconomy {
             Economy.EconomyPlayer ePlayer = null;
             Money rewardMoney = 0L;
 
-            lock (__dictionaryLock) {
-                if (DamageDictionary.ContainsKey(NPC)) {
-                    playerDamageList = DamageDictionary[NPC];
+			if (DamageDictionary.ContainsKey(NPC)) {
+				playerDamageList = DamageDictionary[NPC];
 
-                    if (DamageDictionary.Remove(NPC) == false) {
-                        TShockAPI.Log.ConsoleError("seconomy: world economy: Remove of NPC after reward failed.  This is an internal error.");
-                    }
-                }
-            }
+				if (DamageDictionary.Remove(NPC) == false) {
+					TShockAPI.Log.ConsoleError("seconomy: world economy: Remove of NPC after reward failed.  This is an internal error.");
+				}
+			}
 
             if (playerDamageList == null) {
                 return;
             }
 
-            if ((NPC.boss && WorldConfiguration.MoneyFromBossEnabled) || (!NPC.boss && WorldConfiguration.MoneyFromNPCEnabled)) {
-                foreach (PlayerDamage damage in playerDamageList) {
-                    if (damage.Player == null) {
-                        continue;
-                    }
+			if ((NPC.boss && WorldConfiguration.MoneyFromBossEnabled) || (!NPC.boss && WorldConfiguration.MoneyFromNPCEnabled)) {
+				foreach (PlayerDamage damage in playerDamageList) {
+					if (damage.Player == null) {
+						continue;
+					}
 
-                    ePlayer = Parent.GetEconomyPlayerSafe(damage.Player.whoAmi);
-                    rewardMoney = Convert.ToInt64(Math.Round(WorldConfiguration.MoneyPerDamagePoint * damage.Damage));
+					ePlayer = Parent.GetEconomyPlayerSafe(damage.Player.whoAmi);
+					rewardMoney = Convert.ToInt64(Math.Round(Convert.ToDouble(WorldConfiguration.MoneyPerDamagePoint) * damage.Damage));
 
-                    //load override by NPC type, this allows you to put a modifier on the base for a specific mob type.
-                    Configuration.WorldConfiguration.NPCRewardOverride overrideReward = WorldConfiguration.Overrides.FirstOrDefault(i => i.NPCID == NPC.type);
-                    if (overrideReward != null) {
-                        rewardMoney = Convert.ToInt64(Math.Round(overrideReward.OverridenMoneyPerDamagePoint * damage.Damage));
-                    }
+					//load override by NPC type, this allows you to put a modifier on the base for a specific mob type.
+					Configuration.WorldConfiguration.NPCRewardOverride overrideReward = WorldConfiguration.Overrides.FirstOrDefault(i => i.NPCID == NPC.type);
+					if (overrideReward != null) {
+						rewardMoney = Convert.ToInt64(Math.Round(Convert.ToDouble(overrideReward.OverridenMoneyPerDamagePoint) * damage.Damage));
+					}
 
-                    //if the user doesn't have a bank account or the reward for the mob is 0 (It could be) skip it
-                    if (ePlayer != null && ePlayer.BankAccount != null && rewardMoney > 0 && ePlayer.TSPlayer.Group.HasPermission("seconomy.world.mobgains")) {
-                        Journal.CachedTransaction fund = new Journal.CachedTransaction() {
-                            Aggregations = 1,
-                            Amount = rewardMoney,
-                            DestinationBankAccountK = ePlayer.BankAccount.BankAccountK,
-                            Message = NPC.name,
-							SourceBankAccountK = Parent.WorldAccount.BankAccountK
-                        };
+					if (ePlayer == null || ePlayer.BankAccount == null || rewardMoney <= 0 || ePlayer.TSPlayer.Group.HasPermission("seconomy.world.mobgains") == false) {
+						continue;
+					}
 
-                        if ((NPC.boss && WorldConfiguration.AnnounceBossKillGains) || (!NPC.boss && WorldConfiguration.AnnounceNPCKillGains)) {
-                            fund.Options |= Journal.BankAccountTransferOptions.AnnounceToReceiver;
-                        }
+					Journal.CachedTransaction fund = new Journal.CachedTransaction() {
+						Aggregations = 1,
+						Amount = rewardMoney,
+						DestinationBankAccountK = ePlayer.BankAccount.BankAccountK,
+						Message = NPC.name,
+						SourceBankAccountK = Parent.WorldAccount.BankAccountK
+					};
 
-                        //commit it to the transaction cache
-						Parent.TransactionCache.AddCachedTransaction(fund);
-                    }
-                }
-            }
+					if ((NPC.boss && WorldConfiguration.AnnounceBossKillGains) || (!NPC.boss && WorldConfiguration.AnnounceNPCKillGains)) {
+						fund.Options |= Journal.BankAccountTransferOptions.AnnounceToReceiver;
+					}
+
+					//commit it to the transaction cache
+					Parent.TransactionCache.AddCachedTransaction(fund);
+				}
+			}
         }
 
         #endregion
@@ -277,7 +284,7 @@ namespace Wolfje.Plugins.SEconomy {
                         return;
                     }
 
-                    AddNPCDamage(npc, player, dmgPacket.Damage);
+                    AddNPCDamage(npc, player, dmgPacket.Damage, Convert.ToBoolean(dmgPacket.CrititcalHit));
                 }
             }
         }
@@ -306,7 +313,7 @@ namespace Wolfje.Plugins.SEconomy {
     /// </summary>
     class PlayerDamage {
         public Terraria.Player Player;
-        public int Damage;
+        public double Damage;
     }
 
 }
