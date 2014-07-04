@@ -29,10 +29,17 @@ namespace Wolfje.Plugins.SEconomy {
 		
 		public int LoadSEconomy()
 		{
+			Journal.XmlTransactionJournal journal = null;
+
             try {
-				
-                this.Configuration = Config.FromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
-                this.RunningJournal = new Journal.XmlTransactionJournal(this, Config.JournalPath);
+				this.Configuration = Config.FromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
+				journal = new Journal.XmlTransactionJournal(this, Config.JournalPath);
+				journal.JournalLoadingPercentChanged += (sender, args) => {
+					ConsoleEx.WriteBar(args);
+				};
+				this.RunningJournal = journal;
+				this.RunningJournal.LoadJournal();
+
                 this.WorldEc = new WorldEconomy(this);
                 this.EventHandlers = new EventHandlers(this);
                 this.ChatCommands = new ChatCommands(this);

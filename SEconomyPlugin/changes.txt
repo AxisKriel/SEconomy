@@ -19,5 +19,8 @@ Update 15
 [-] Removed /bank enable|disable because it has forever done nothing and nobody even cares
 [c] Changed most ContinueWith delegates to awaits in .net 4.5
 [c] Rewrote Configuration interface
-[c] WorldEconomy now does not hand out more rewards than it's supposed to
+[c] WorldEconomy now does not hand out more rewards than a mob's health
 [c] WorldEconomy now takes into account the correct damage algorithm
+[c] Rewrote startup interface to be more streamlined
+[c] Stopped GZipDecompress from going MS -> Byte array and then back to MS again
+[c] Removed all the console fuckery inside SaveJournal

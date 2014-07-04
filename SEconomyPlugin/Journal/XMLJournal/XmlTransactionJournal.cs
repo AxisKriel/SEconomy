@@ -13,6 +13,7 @@ using System.Globalization;
 using System.Threading;
 using System.Collections;
 using System.Text;
+using Wolfje.Plugins.SEconomy.Journal.XMLJournal;
 
 namespace Wolfje.Plugins.SEconomy.Journal {
 
@@ -32,6 +33,8 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 		public event EventHandler<PendingTransactionEventArgs> BankTransactionPending;
 		public event EventHandler<BankTransferEventArgs> BankTransferCompleted;
 
+		public event EventHandler<JournalLoadingPercentChangedEventArgs> JournalLoadingPercentChanged;
+
 		/// <summary>
 		/// Returns the version of the XML schema built into this dll
 		/// </summary>
@@ -50,8 +53,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 				JournalBackupTimer.Elapsed += JournalBackupTimer_Elapsed;
 				this.BackupsEnabled = true;
 			}
-
-			LoadJournal();
 		}
 
 		/// <summary>
@@ -113,20 +114,24 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 		/// <summary>
 		/// Delfates a GZip byte array and returns the uncompressed data.
 		/// </summary>
-		byte[] GZipDecompress(byte[] CompressedData)
+		MemoryStream GZipDecompress(byte[] CompressedData)
 		{
-			byte[] deflatedData;
+			MemoryStream ms = new MemoryStream();
 
-			using (MemoryStream outStream = new MemoryStream()) {
-				using (GZipStream gzStream = new GZipStream(new MemoryStream(CompressedData), CompressionMode.Decompress, false)) {
-					gzStream.CopyTo(outStream);
-				}
+			using (GZipStream gzStream = new GZipStream(new MemoryStream(CompressedData), CompressionMode.Decompress, false)) {
+				byte[] buff = new byte[4096];
+				int len = 0;
 
-				//Copy the deflated stream in its entirety onto the stack
-				deflatedData = outStream.ToArray();
+				do {
+					if ((len = gzStream.Read(buff, 0, 4096)) > 0) {
+						ms.Write(buff, 0, len);
+					}
+				} while (len > 0);
 			}
 
-			return deflatedData;
+			ms.Seek(0, SeekOrigin.Begin);
+
+			return ms;
 		}
 
 
@@ -353,51 +358,44 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
 		public void LoadJournal()
 		{
-			ConsoleColor origColour = Console.ForegroundColor;
-			Console.ForegroundColor = ConsoleColor.Yellow;
-
-			Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(71, "SEconomy is loading its journal."));
-			Console.WriteLine();
+			MemoryStream uncompressedData;
+			JournalLoadingPercentChangedEventArgs parsingArgs = new JournalLoadingPercentChangedEventArgs() {
+				Label = "Loading"
+			};
+			JournalLoadingPercentChangedEventArgs finalArgs = new JournalLoadingPercentChangedEventArgs() {
+				Label = "Verify"
+			};
 
 			try {
 				byte[] fileData = new byte[0];
 			initPoint:
-				Console.ForegroundColor = ConsoleColor.Yellow;
-				Console.Write(SEconomyPlugin.Locale.StringOrDefault(72, "loading journal"));
 				try {
 					fileData = File.ReadAllBytes(path);
 				} catch (Exception ex) {
 					Console.ForegroundColor = ConsoleColor.DarkCyan;
 
 					if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
-						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, string.Format("{0}\r\n", SEconomyPlugin.Locale.StringOrDefault(73, "[not found, creating new]")));
-
+						TShockAPI.Log.ConsoleInfo(" * It appears you do not have a journal yet, one will be created for you.");
 						SaveJournal();
 						//yes there are valid uses for goto, don't judge me fool
 						goto initPoint;
 					} else if (ex is System.Security.SecurityException) {
-						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(74, "denied"));
+						TShockAPI.Log.ConsoleError(" * Access denied to the journal file.  Check permissions.");
 					} else {
-						ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(75, "failed"));
+						TShockAPI.Log.ConsoleError(" * Loading your journal failed: " + ex.Message);
 					}
 				}
 
-				ConsoleEx.WriteAtEnd(2, ConsoleColor.Green, "[OK: {0} kB]\r\n", fileData.LongLength / 1024);
-				Console.ForegroundColor = ConsoleColor.Yellow;
-				Console.Write(SEconomyPlugin.Locale.StringOrDefault(76, "decompressing journal"));
-
-				byte[] uncompressedData;
 				try {
 					uncompressedData = GZipDecompress(fileData);
 				} catch {
-					ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(75, "failed"));
+					TShockAPI.Log.ConsoleError(" * Decompression failed.");
 					return;
 				}
 
-				Console.ForegroundColor = ConsoleColor.Green;
-				ConsoleEx.WriteAtEnd(2, ConsoleColor.Green, "[OK: gz {0} kB]\r\n", uncompressedData.LongLength / 1024);
-				Console.ForegroundColor = ConsoleColor.Yellow;
-				Console.Write(SEconomyPlugin.Locale.StringOrDefault(77, "parsing accounts"));
+				if (JournalLoadingPercentChanged != null) {
+					JournalLoadingPercentChanged(this, parsingArgs);
+				}
 
 				try {
 					Hashtable bankAccountMap = new Hashtable();
@@ -406,177 +404,180 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 					//You can't use XDocument.Parse when you have an XDeclaration for some even dumber reason than the write
 					//issue, XDocument has to be constructed from a .net 3.5 XmlReader in this case
 					//or you get a parse exception complaining about literal content.
-					using (MemoryStream ms = new MemoryStream(uncompressedData)) {
-						using (XmlTextReader xmlStream = new XmlTextReader(ms)) {
-							XDocument doc = XDocument.Load(xmlStream);
-							var bankAccountList = doc.XPathSelectElements("/Journal/BankAccounts/BankAccount");
-							int bankAccountCount = bankAccountList.Count();
-							int i = 0;
-							int oldPercent = 0;
+					using (XmlTextReader xmlStream = new XmlTextReader(uncompressedData)) {
+						XDocument doc = XDocument.Load(xmlStream);
+						var bankAccountList = doc.XPathSelectElements("/Journal/BankAccounts/BankAccount");
+						int bankAccountCount = bankAccountList.Count();
+						int i = 0;
+						int oldPercent = 0;
 
-							foreach (XElement elem in bankAccountList) {
-								long bankAccountK = 0L;
-								double percentComplete = (double)i / (double)bankAccountCount * 100;
+						foreach (XElement elem in bankAccountList) {
+							long bankAccountK = 0L;
+							double percentComplete = (double)i / (double)bankAccountCount * 100;
 
-								var account = new XmlBankAccount(this) {
-									Description = elem.Attribute("Description").Value,
-									UserAccountName = elem.Attribute("UserAccountName").Value,
-									WorldID = long.Parse(elem.Attribute("WorldID").Value),
-									Flags = (BankAccountFlags)Enum.Parse(typeof(BankAccountFlags), elem.Attribute("Flags").Value)
-								};
+							var account = new XmlBankAccount(this) {
+								Description = elem.Attribute("Description").Value,
+								UserAccountName = elem.Attribute("UserAccountName").Value,
+								WorldID = long.Parse(elem.Attribute("WorldID").Value),
+								Flags = (BankAccountFlags)Enum.Parse(typeof(BankAccountFlags), elem.Attribute("Flags").Value)
+							};
 
-								if (!long.TryParse(elem.Attribute("BankAccountK").Value, out bankAccountK)) {
-									//we've overwritten the old bank account key, add it to the old/new map
-									bankAccountK = Interlocked.Increment(ref _bankAccountSeed);
-									bankAccountMap.Add(elem.Attribute("BankAccountK").Value, bankAccountK);
-								}
-
-								account.BankAccountK = bankAccountK;
-
-								//parse transactions under this node
-								if (elem.Element("Transactions") != null) {
-									foreach (XElement txElement in elem.Element("Transactions").Elements("Transaction")) {
-										long transactionK = 0L;
-										long transactionFK = 0;
-										long amount = long.Parse(txElement.Attribute("Amount").Value);
-										DateTime transactionDate;
-										BankAccountTransactionFlags flags;
-
-										long.TryParse(txElement.Attribute("BankAccountTransactionK").Value, out transactionK);
-										long.TryParse(txElement.Attribute("BankAccountTransactionFK").Value, out transactionFK);
-										DateTime.TryParse(txElement.Attribute("TransactionDateUtc").Value, out transactionDate);
-										Enum.TryParse<BankAccountTransactionFlags>(txElement.Attribute("Flags").Value, out flags);
-
-										//ignore orphaned transactions
-										var trans = new XmlTransaction(account) {
-											Amount = amount,
-											BankAccountTransactionK = transactionK,
-											BankAccountTransactionFK = transactionFK,
-											TransactionDateUtc = transactionDate,
-											Flags = flags
-										};
-
-										trans.Message = txElement.Attribute("Message") != null ? txElement.Attribute("Message").Value : null;
-
-										account.AddTransaction(trans);
-									}
-								}
-
-								if (oldPercent != (int)percentComplete) {
-									ConsoleEx.WriteAtEnd(4, ConsoleColor.Yellow, "[{0}%]", (int)percentComplete);
-									oldPercent = (int)percentComplete;
-								}
-
-								Interlocked.Increment(ref i);
-
-								bankAccounts.Add(account);
+							if (!long.TryParse(elem.Attribute("BankAccountK").Value, out bankAccountK)) {
+								//we've overwritten the old bank account key, add it to the old/new map
+								bankAccountK = Interlocked.Increment(ref _bankAccountSeed);
+								bankAccountMap.Add(elem.Attribute("BankAccountK").Value, bankAccountK);
 							}
 
-							ConsoleEx.WriteAtEnd(4, ConsoleColor.Green, "[OK]");
+							account.BankAccountK = bankAccountK;
 
-							Interlocked.Exchange(ref _bankAccountSeed, bankAccounts.Count() > 0 ? bankAccounts.Max(sum => sum.BankAccountK) : 0);
+							//parse transactions under this node
+							if (elem.Element("Transactions") != null) {
+								foreach (XElement txElement in elem.Element("Transactions").Elements("Transaction")) {
+									long transactionK = 0L;
+									long transactionFK = 0;
+									long amount = long.Parse(txElement.Attribute("Amount").Value);
+									DateTime transactionDate;
+									BankAccountTransactionFlags flags;
 
-							//delete transactions with duplicate IDs
+									long.TryParse(txElement.Attribute("BankAccountTransactionK").Value, out transactionK);
+									long.TryParse(txElement.Attribute("BankAccountTransactionFK").Value, out transactionFK);
+									DateTime.TryParse(txElement.Attribute("TransactionDateUtc").Value, out transactionDate);
+									Enum.TryParse<BankAccountTransactionFlags>(txElement.Attribute("Flags").Value, out flags);
 
-							var qAccounts = from summary in bankAccounts
-											group summary by summary.BankAccountK into g
-											where g.Count() > 1
-											select new {
-												name = g.Key,
-												count = g.Count()
-											};
-
-							long[] duplicateAccounts = qAccounts.Select(pred => pred.name).ToArray();
-
-							int removedAccounts = bankAccounts.RemoveAll(pred => duplicateAccounts.Contains(pred.BankAccountK));
-
-							if (removedAccounts > 0) {
-								TShockAPI.Log.Warn("seconomy journal: removed " + removedAccounts + " accounts with duplicate IDs.");
-							}
-
-							//transactions in the old schema.
-							int tranCount = doc.XPathSelectElements("/Journal/Transactions/Transaction").Count();
-							i = 0; //reset index
-
-							foreach (XElement elem in doc.XPathSelectElements("/Journal/Transactions/Transaction")) {
-								//Parallel.ForEach(doc.XPathSelectElements("/Journal/Transactions/Transaction"), (elem) => {
-								double percentComplete = (double)i / (double)tranCount * 100;
-								long bankAccountFK = 0L;
-								long transactionK = 0L;
-								long amount = long.Parse(elem.Attribute("Amount").Value);
-
-								if (!long.TryParse(elem.Attribute("BankAccountFK").Value, out bankAccountFK)) {
-									if (bankAccountMap.ContainsKey(elem.Attribute("BankAccountFK").Value)) {
-										Interlocked.Exchange(ref bankAccountFK, (long)bankAccountMap[elem.Attribute("BankAccountFK").Value]);
-									}
-								}
-
-								IBankAccount bankAccount = GetBankAccount(bankAccountFK);
-
-
-								long.TryParse(elem.Attribute("BankAccountTransactionK").Value, out transactionK);
-
-								//ignore orphaned transactions
-								if (bankAccount != null) {
-									var trans = new XmlTransaction(bankAccount) {
+									//ignore orphaned transactions
+									var trans = new XmlTransaction(account) {
 										Amount = amount,
-										BankAccountTransactionK = transactionK
+										BankAccountTransactionK = transactionK,
+										BankAccountTransactionFK = transactionFK,
+										TransactionDateUtc = transactionDate,
+										Flags = flags
 									};
 
-									if (elem.Attribute("BankAccountTransactionFK") != null) {
-										trans.CustomValues.Add(XmlTransaction.kXmlTransactionOldTransactonFK, elem.Attribute("BankAccountTransactionFK").Value);
-									}
+									trans.Message = txElement.Attribute("Message") != null ? txElement.Attribute("Message").Value : null;
 
-									trans.Message = elem.Attribute("Message") != null ? elem.Attribute("Message").Value : null;
-
-									bankAccount.AddTransaction(trans);
-
-									transactionMap.Add(elem.Attribute("BankAccountTransactionK").Value, trans.BankAccountTransactionK);
+									account.AddTransaction(trans);
 								}
-
-								if (oldPercent != (int)percentComplete) {
-									ConsoleEx.WriteAtEnd(4, ConsoleColor.Yellow, "[{0}%]", (int)percentComplete);
-									oldPercent = (int)percentComplete;
-								}
-
-								Interlocked.Increment(ref i);
 							}
 
-							Console.ForegroundColor = ConsoleColor.Yellow;
+							if (oldPercent != (int)percentComplete) {
+								parsingArgs.Percent = (int)percentComplete;
+								if (JournalLoadingPercentChanged != null) {
+									JournalLoadingPercentChanged(this, parsingArgs);
+								}
+								oldPercent = (int)percentComplete;
+							}
 
-							Console.Write("\r\n", SEconomyPlugin.Locale.StringOrDefault(78, "upgrading transactions"));
-							int txCount = Transactions.Count();
-							int x = 0;
-							
-							foreach (IBankAccount account in bankAccounts) {
-								foreach (ITransaction trans in account.Transactions) {
-									double pcc = (double)x / (double)txCount * 100;
+							Interlocked.Increment(ref i);
 
-									//assigns the transactionK according to the hashmap of the old key stored as custom values
-									if (trans.CustomValues.ContainsKey(XmlTransaction.kXmlTransactionOldTransactonFK)) {
-										object value = transactionMap[trans.CustomValues[XmlTransaction.kXmlTransactionOldTransactonFK]];
+							bankAccounts.Add(account);
+						}
 
-										trans.BankAccountTransactionFK = value != null ? (long)value : -1L;
-									}
-									if (oldPercent != (int)pcc) {
-										ConsoleEx.WriteAtEnd(4, ConsoleColor.Yellow, "[{0}%]", (int)pcc);
+						Interlocked.Exchange(ref _bankAccountSeed, bankAccounts.Count() > 0 ? bankAccounts.Max(sum => sum.BankAccountK) : 0);
+
+						//delete transactions with duplicate IDs
+
+						var qAccounts = from summary in bankAccounts
+										group summary by summary.BankAccountK into g
+										where g.Count() > 1
+										select new {
+											name = g.Key,
+											count = g.Count()
+										};
+
+						long[] duplicateAccounts = qAccounts.Select(pred => pred.name).ToArray();
+
+						int removedAccounts = bankAccounts.RemoveAll(pred => duplicateAccounts.Contains(pred.BankAccountK));
+
+						if (removedAccounts > 0) {
+							TShockAPI.Log.Warn("seconomy journal: removed " + removedAccounts + " accounts with duplicate IDs.");
+						}
+
+						//transactions in the old schema.
+						int tranCount = doc.XPathSelectElements("/Journal/Transactions/Transaction").Count();
+						i = 0; //reset index
+
+						foreach (XElement elem in doc.XPathSelectElements("/Journal/Transactions/Transaction")) {
+							//Parallel.ForEach(doc.XPathSelectElements("/Journal/Transactions/Transaction"), (elem) => {
+							double percentComplete = (double)i / (double)tranCount * 100;
+							long bankAccountFK = 0L;
+							long transactionK = 0L;
+							long amount = long.Parse(elem.Attribute("Amount").Value);
+
+							if (!long.TryParse(elem.Attribute("BankAccountFK").Value, out bankAccountFK)) {
+								if (bankAccountMap.ContainsKey(elem.Attribute("BankAccountFK").Value)) {
+									Interlocked.Exchange(ref bankAccountFK, (long)bankAccountMap[elem.Attribute("BankAccountFK").Value]);
+								}
+							}
+
+							IBankAccount bankAccount = GetBankAccount(bankAccountFK);
+
+
+							long.TryParse(elem.Attribute("BankAccountTransactionK").Value, out transactionK);
+
+							//ignore orphaned transactions
+							if (bankAccount != null) {
+								var trans = new XmlTransaction(bankAccount) {
+									Amount = amount,
+									BankAccountTransactionK = transactionK
+								};
+
+								if (elem.Attribute("BankAccountTransactionFK") != null) {
+									trans.CustomValues.Add(XmlTransaction.kXmlTransactionOldTransactonFK, elem.Attribute("BankAccountTransactionFK").Value);
+								}
+
+								trans.Message = elem.Attribute("Message") != null ? elem.Attribute("Message").Value : null;
+
+								bankAccount.AddTransaction(trans);
+
+								transactionMap.Add(elem.Attribute("BankAccountTransactionK").Value, trans.BankAccountTransactionK);
+							}
+
+							Interlocked.Increment(ref i);
+						}
+
+						int txCount = Transactions.Count();
+						int x = 0;
+
+						finalArgs.Percent = 0;
+
+						if (JournalLoadingPercentChanged != null) {
+							JournalLoadingPercentChanged(this, finalArgs);
+						}
+
+						foreach (IBankAccount account in bankAccounts) {
+							foreach (XmlTransaction trans in account.Transactions) {
+								double pcc = (double)x / (double)txCount * 100;
+
+								//assigns the transactionK according to the hashmap of the old key stored as custom values
+								if (trans.CustomValues.ContainsKey(XmlTransaction.kXmlTransactionOldTransactonFK)) {
+									object value = transactionMap[trans.CustomValues[XmlTransaction.kXmlTransactionOldTransactonFK]];
+
+									trans.BankAccountTransactionFK = value != null ? (long)value : -1L;
+								}
+								if (oldPercent != (int)pcc) {
+									if (JournalLoadingPercentChanged != null) {
+										finalArgs.Percent = (int)pcc;
+										JournalLoadingPercentChanged(this, finalArgs);
 										oldPercent = (int)pcc;
 									}
-									Interlocked.Increment(ref x);
-									trans.CustomValues.Clear();
 								}
+								Interlocked.Increment(ref x);
+
+								trans.CustomValues.Clear();
+								trans.CustomValues = null;
 							}
-
-							bankAccountMap = null;
-							transactionMap = null;
-
-							var accountCount = bankAccounts.Count;
-
-							ConsoleEx.WriteAtEnd(2, ConsoleColor.Green, "[OK: xml {0} acc, {1} tx]\r\n", accountCount, Transactions.Count());
-							Console.ForegroundColor = ConsoleColor.Yellow;
 						}
+
+						bankAccountMap = null;
+						transactionMap = null;
+
+						var accountCount = bankAccounts.Count;
+						Console.WriteLine();
+						Console.ForegroundColor = ConsoleColor.Cyan;
+						Console.WriteLine("\r\n Journal clean: {0} accounts and {1} transactions.", accountCount, Transactions.Count());
+						Console.ResetColor();
 					}
-				} catch(Exception ex) {
+				} catch (Exception ex) {
 					ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(79, "corrupt"));
 					TShockAPI.Log.ConsoleError(ex.ToString());
 					Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(80, "Your transaction journal appears to be corrupt and transactions have been lost.\n\nYou will start with a clean journal.\nYour old journal file has been move to SEconomy.journal.xml.gz.corrupt"));
@@ -588,7 +589,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 					goto initPoint;
 				}
 			} finally {
-				Console.ForegroundColor = origColour;
 				Console.WriteLine();
 			}
 		}

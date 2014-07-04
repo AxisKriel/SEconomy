@@ -79,6 +79,7 @@
     <Compile Include="Journal\ITransaction.cs" />
     <Compile Include="Journal\ITransactionJournal.cs" />
     <Compile Include="Journal\PendingTransactionEventArgs.cs" />
+    <Compile Include="Journal\XMLJournal\JournalLoadingPercentChangedEventArgs.cs" />
     <Compile Include="Journal\XMLJournal\XmlBankAccount.cs" />
     <Compile Include="Journal\XMLJournal\XmlTransaction.cs" />
     <Compile Include="Journal\JournalTransactionCache.cs" />

@@ -81,9 +81,38 @@ namespace Wolfje.Plugins.SEconomy {
 			Lang.Localization.PrepareLanguages();
 			Locale = new Lang.Localization("en-AU");
 
+			PrintIntro();
+
 			TShockAPI.Commands.ChatCommands.Add(new TShockAPI.Command(TShock_CommandExecuted, "seconomy", "sec"));
 			_seconomyInstance = new SEconomy(this);
 			Instance.LoadSEconomy();
+		}
+
+		protected void PrintIntro()
+		{
+			Console.WriteLine();
+			Console.ForegroundColor = ConsoleColor.Cyan;
+			Console.Write(" SEconomy Update ");
+			Console.ForegroundColor = ConsoleColor.Yellow;
+			Console.Write(this.Version.Build);
+			
+#if __PREVIEW
+			Console.ForegroundColor = ConsoleColor.Gray;
+			Console.Write(" Preview");
+#endif
+
+			Console.WriteLine();
+			Console.ForegroundColor = ConsoleColor.Cyan;
+			Console.Write(" Copyright (C) Wolfje, 2014 - ");
+
+			Console.ForegroundColor = ConsoleColor.Blue;
+			Console.Write("http://plugins.tw.id.au");
+
+			Console.WriteLine("\r\n");
+			Console.ForegroundColor = ConsoleColor.Cyan;
+			Console.WriteLine(" Please wait...");
+			Console.WriteLine();
+			Console.ResetColor();
 		}
 
 		protected async void TShock_CommandExecuted(TShockAPI.CommandArgs args)
