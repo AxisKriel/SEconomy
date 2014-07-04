@@ -3,7 +3,7 @@
 	<s>Initialization of SEconomy failed:</s>
 	<s>SEconomy: world account: paid {0} to players.</s>
 	<s>blah</s>
-	<!-- SEconomyPlugin.cs: 3-12 -->
+	<!-- SEconomyPlugin.cs: 4-14 -->
 	<s>SEconomy v{0} by Wolfje</s>
 	<s> * http://plugins.tw.id.au</s>
 	<s> * /sec[onomy] reload|rl - Reloads SEconomy</s>
@@ -15,7 +15,7 @@
 	<s>seconomy stop: SEconomy is already started. Use /sec stop to stop.</s>
 	<s>SEconomy failed to initialize, and will be unavailable for this session.</s>
 	<s>SEconomy has started.</s>
-	<!-- EventHandlers.cs: 13-26 -->
+	<!-- EventHandlers.cs: 15-28 -->
 	<s>You killed {0} and gained {1}</s>
 	<s>{0} killed you and you lost {1}.</s>
 	<s>You {3} {0} from {1}. Transaction # {2}</s>
@@ -30,7 +30,7 @@
 	<s> for </s>
 	<s>You have {0}.</s>
 	<s>seconomy async: error occurred on a task thread: </s>
-	<!-- ChatCommands.cs: 27-59 -->
+	<!-- ChatCommands.cs: 29-59 -->
 	<s>This server is running SEconomy v{0} by Wolfje</s>
 	<s>"Download here: http://plugins.tw.id.au"</s>
 	<s>You can:</s>
