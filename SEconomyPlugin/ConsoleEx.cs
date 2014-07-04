@@ -11,10 +11,18 @@ namespace Wolfje.Plugins.SEconomy {
 		public static void WriteBar(JournalLoadingPercentChangedEventArgs args)
 		{
 			StringBuilder output = new StringBuilder();
+			int fillLen = 0;
+
+			output.Append(" ");
+			for (int i = 0; i < 10; i++) {
+				char c = i < args.Label.Length ? args.Label[i] : ' ';
+				output.Append(c);
+			}
 			
-			output.AppendFormat(" {0}", args.Label.Substring(0, args.Label.Length > 16 ? 16 : args.Label.Length));
+			//output.AppendFormat(" {0}", args.Label.Substring(0, args.Label.Length > 16 ? 16 : args.Label.Length));
 			output.Append(" [");
-			int fillLen = Convert.ToInt32(((decimal)args.Percent / 100) * 60);
+			
+			fillLen = Convert.ToInt32(((decimal)args.Percent / 100) * 60);
 
 			for (int i = 0; i < 60; i++) {
 				output.Append(i <= fillLen ? "#" : " ");
