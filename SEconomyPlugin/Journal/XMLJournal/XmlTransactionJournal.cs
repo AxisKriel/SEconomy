@@ -15,7 +15,7 @@ using System.Collections;
 using System.Text;
 using Wolfje.Plugins.SEconomy.Journal.XMLJournal;
 
-namespace Wolfje.Plugins.SEconomy.Journal {
+namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 	/// <summary>
 	/// Holds an XML representation of the SEconomy transaction journal.
@@ -32,7 +32,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
 		public event EventHandler<PendingTransactionEventArgs> BankTransactionPending;
 		public event EventHandler<BankTransferEventArgs> BankTransferCompleted;
-
 		public event EventHandler<JournalLoadingPercentChangedEventArgs> JournalLoadingPercentChanged;
 
 		/// <summary>

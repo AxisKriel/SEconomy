@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="Database.Store" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.6" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="bank_account">
+          <Key>
+            <PropertyRef Name="bank_account_id" />
+          </Key>
+          <Property Name="bank_account_id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="user_account_name" Type="varchar" MaxLength="64" Nullable="false" />
+          <Property Name="world_id" Type="bigint" Nullable="false" />
+          <Property Name="flags" Type="int" Nullable="false" />
+          <Property Name="flags2" Type="int" Nullable="false" />
+          <Property Name="description" Type="varchar" MaxLength="512" Nullable="false" />
+        </EntityType>
+        <EntityType Name="bank_account_transaction">
+          <Key>
+            <PropertyRef Name="bank_account_transaction_id" />
+          </Key>
+          <Property Name="bank_account_transaction_id" Type="bigint" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="bank_account_transaction_fk" Type="bigint" />
+          <Property Name="bank_account_fk" Type="bigint" Nullable="false" />
+          <Property Name="amount" Type="bigint" Nullable="false" />
+          <Property Name="message" Type="varchar" MaxLength="512" />
+          <Property Name="flags" Type="int" Nullable="false" />
+          <Property Name="flags2" Type="int" Nullable="false" />
+          <Property Name="transaction_date_utc" Type="datetime" Precision="0" Nullable="false" />
+        </EntityType>
+        <Association Name="fk_transaction-bank_account">
+          <End Role="bank_account" Type="Self.bank_account" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="bank_account_transaction" Type="Self.bank_account_transaction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="bank_account">
+              <PropertyRef Name="bank_account_id" />
+            </Principal>
+            <Dependent Role="bank_account_transaction">
+              <PropertyRef Name="bank_account_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="fk_transaction-transaction">
+          <End Role="bank_account_transaction" Type="Self.bank_account_transaction" Multiplicity="0..1" />
+          <End Role="bank_account_transaction1" Type="Self.bank_account_transaction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="bank_account_transaction">
+              <PropertyRef Name="bank_account_transaction_id" />
+            </Principal>
+            <Dependent Role="bank_account_transaction1">
+              <PropertyRef Name="bank_account_transaction_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="DatabaseStoreContainer">
+          <EntitySet Name="bank_account" EntityType="Self.bank_account" Schema="seconomy" store:Type="Tables" />
+          <EntitySet Name="bank_account_transaction" EntityType="Self.bank_account_transaction" Schema="seconomy" store:Type="Tables" />
+          <AssociationSet Name="fk_transaction-bank_account" Association="Self.fk_transaction-bank_account">
+            <End Role="bank_account" EntitySet="bank_account" />
+            <End Role="bank_account_transaction" EntitySet="bank_account_transaction" />
+          </AssociationSet>
+          <AssociationSet Name="fk_transaction-transaction" Association="Self.fk_transaction-transaction">
+            <End Role="bank_account_transaction" EntitySet="bank_account_transaction" />
+            <End Role="bank_account_transaction1" EntitySet="bank_account_transaction" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="Model" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityType Name="bank_account">
+          <Key>
+            <PropertyRef Name="bank_account_id" />
+          </Key>
+          <Property Name="bank_account_id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="user_account_name" Type="String" MaxLength="64" FixedLength="false" Unicode="false" Nullable="false" />
+          <Property Name="world_id" Type="Int64" Nullable="false" />
+          <Property Name="flags" Type="Int32" Nullable="false" />
+          <Property Name="flags2" Type="Int32" Nullable="false" />
+          <Property Name="description" Type="String" MaxLength="512" FixedLength="false" Unicode="false" Nullable="false" />
+          <NavigationProperty Name="bank_account_transactions" Relationship="Self.fk_transaction_bank_account" FromRole="bank_account" ToRole="bank_account_transaction" />
+        </EntityType>
+        <EntityType Name="bank_account_transaction">
+          <Key>
+            <PropertyRef Name="bank_account_transaction_id" />
+          </Key>
+          <Property Name="bank_account_transaction_id" Type="Int64" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="bank_account_transaction_fk" Type="Int64" />
+          <Property Name="bank_account_fk" Type="Int64" Nullable="false" />
+          <Property Name="amount" Type="Int64" Nullable="false" />
+          <Property Name="message" Type="String" MaxLength="512" FixedLength="false" Unicode="false" />
+          <Property Name="flags" Type="Int32" Nullable="false" />
+          <Property Name="flags2" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="bank_account" Relationship="Self.fk_transaction_bank_account" FromRole="bank_account_transaction" ToRole="bank_account" />
+          <NavigationProperty Name="bank_account_transactions" Relationship="Self.fk_transaction_transaction" FromRole="bank_account_transaction" ToRole="bank_account_transaction1" />
+          <NavigationProperty Name="bank_account_transaction_inverse" Relationship="Self.fk_transaction_transaction" FromRole="bank_account_transaction1" ToRole="bank_account_transaction" />
+          <Property Name="transaction_date_utc" Type="DateTime" Nullable="false" />
+        </EntityType>
+        <Association Name="fk_transaction_bank_account">
+          <End Role="bank_account" Type="Self.bank_account" Multiplicity="1">
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Role="bank_account_transaction" Type="Self.bank_account_transaction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="bank_account">
+              <PropertyRef Name="bank_account_id" />
+            </Principal>
+            <Dependent Role="bank_account_transaction">
+              <PropertyRef Name="bank_account_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="fk_transaction_transaction">
+          <End Role="bank_account_transaction" Type="Self.bank_account_transaction" Multiplicity="0..1" />
+          <End Role="bank_account_transaction1" Type="Self.bank_account_transaction" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="bank_account_transaction">
+              <PropertyRef Name="bank_account_transaction_id" />
+            </Principal>
+            <Dependent Role="bank_account_transaction1">
+              <PropertyRef Name="bank_account_transaction_fk" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityContainer Name="Context" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="bank_account" EntityType="Self.bank_account" />
+          <EntitySet Name="bank_account_transaction" EntityType="Self.bank_account_transaction" />
+          <AssociationSet Name="fk_transaction_bank_account" Association="Self.fk_transaction_bank_account">
+            <End Role="bank_account" EntitySet="bank_account" />
+            <End Role="bank_account_transaction" EntitySet="bank_account_transaction" />
+          </AssociationSet>
+          <AssociationSet Name="fk_transaction_transaction" Association="Self.fk_transaction_transaction">
+            <End Role="bank_account_transaction" EntitySet="bank_account_transaction" />
+            <End Role="bank_account_transaction1" EntitySet="bank_account_transaction" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="DatabaseStoreContainer" CdmEntityContainer="Context">
+          <EntitySetMapping Name="bank_account">
+            <EntityTypeMapping TypeName="Model.bank_account">
+              <MappingFragment StoreEntitySet="bank_account">
+                <ScalarProperty Name="bank_account_id" ColumnName="bank_account_id" />
+                <ScalarProperty Name="user_account_name" ColumnName="user_account_name" />
+                <ScalarProperty Name="world_id" ColumnName="world_id" />
+                <ScalarProperty Name="flags" ColumnName="flags" />
+                <ScalarProperty Name="flags2" ColumnName="flags2" />
+                <ScalarProperty Name="description" ColumnName="description" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="bank_account_transaction">
+            <EntityTypeMapping TypeName="Model.bank_account_transaction">
+              <MappingFragment StoreEntitySet="bank_account_transaction">
+                <ScalarProperty Name="transaction_date_utc" ColumnName="transaction_date_utc" />
+                <ScalarProperty Name="bank_account_transaction_id" ColumnName="bank_account_transaction_id" />
+                <ScalarProperty Name="bank_account_transaction_fk" ColumnName="bank_account_transaction_fk" />
+                <ScalarProperty Name="bank_account_fk" ColumnName="bank_account_fk" />
+                <ScalarProperty Name="amount" ColumnName="amount" />
+                <ScalarProperty Name="message" ColumnName="message" />
+                <ScalarProperty Name="flags" ColumnName="flags" />
+                <ScalarProperty Name="flags2" ColumnName="flags2" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="true" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

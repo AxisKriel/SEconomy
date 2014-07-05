@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Wolfje.Plugins.SEconomy.Journal.XMLJournal;
+using Wolfje.Plugins.SEconomy.Journal;
 
 namespace Wolfje.Plugins.SEconomy {
     public static class ConsoleEx {
@@ -19,7 +19,6 @@ namespace Wolfje.Plugins.SEconomy {
 				output.Append(c);
 			}
 			
-			//output.AppendFormat(" {0}", args.Label.Substring(0, args.Label.Length > 16 ? 16 : args.Label.Length));
 			output.Append(" [");
 			
 			fillLen = Convert.ToInt32(((decimal)args.Percent / 100) * 60);

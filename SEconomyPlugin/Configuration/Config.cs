@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 
 namespace Wolfje.Plugins.SEconomy {
     public class Config {
+		public static string BaseDirectory = @"tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy";
+        public static string JournalPath = Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.journal.xml.gz";
 		protected string path;
 
         public bool BankAccountsEnabled = true;
@@ -15,11 +17,10 @@ namespace Wolfje.Plugins.SEconomy {
         public int PayIntervalMinutes = 30;
         public int IdleThresholdMinutes = 10;
         public string IntervalPayAmount = "0";
-        public static string BaseDirectory = @"tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy";
-        public static string JournalPath = Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.journal.xml.gz";
-
+		public string JournalType = "xml";
         public int JournalBackupMinutes = 1;
         public MoneyProperties MoneyConfiguration = new MoneyProperties();
+		public Configuration.SQLConnectionProperties SQLConnectionProperties = new Configuration.SQLConnectionProperties();
         public bool EnableProfiler = false;
 
 		public Config(string path)

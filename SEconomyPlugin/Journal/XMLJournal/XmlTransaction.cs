@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Wolfje.Plugins.SEconomy.Journal {
+namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 	public class XmlTransaction : ITransaction {
 		IBankAccount owningBankAccount;
 		Dictionary<string, object> customValues;
@@ -94,5 +94,22 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 				customValues = value;
 			}
 		}
+
+		#region ITransaction Members
+
+
+		public object TransactionObject
+		{
+			get
+			{
+				throw new NotImplementedException();
+			}
+			set
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		#endregion
 	}
 }

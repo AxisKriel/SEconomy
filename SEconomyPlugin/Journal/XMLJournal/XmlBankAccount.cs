@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Wolfje.Plugins.SEconomy.Journal {
+namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
     public class XmlBankAccount : IBankAccount {
         ITransactionJournal owningJournal;
         List<ITransaction> transactions;

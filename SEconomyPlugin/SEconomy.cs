@@ -29,17 +29,9 @@ namespace Wolfje.Plugins.SEconomy {
 		
 		public int LoadSEconomy()
 		{
-			Journal.XmlTransactionJournal journal = null;
-
             try {
 				this.Configuration = Config.FromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
-				journal = new Journal.XmlTransactionJournal(this, Config.JournalPath);
-				journal.JournalLoadingPercentChanged += (sender, args) => {
-					ConsoleEx.WriteBar(args);
-				};
-				this.RunningJournal = journal;
-				this.RunningJournal.LoadJournal();
-
+				LoadJournal();
                 this.WorldEc = new WorldEconomy(this);
                 this.EventHandlers = new EventHandlers(this);
                 this.ChatCommands = new ChatCommands(this);
@@ -52,6 +44,33 @@ namespace Wolfje.Plugins.SEconomy {
             }
 
 			return 0;
+		}
+
+		protected void LoadJournal()
+		{
+			Journal.ITransactionJournal journal = null;
+			if (Configuration == null) {
+				return;
+			}
+
+			if (Configuration.JournalType.Equals("xml", StringComparison.InvariantCultureIgnoreCase) == true) {
+				Wolfje.Plugins.SEconomy.Journal.XMLJournal.XmlTransactionJournal xmlJournal = new Journal.XMLJournal.XmlTransactionJournal(this, Config.JournalPath);
+				xmlJournal.JournalLoadingPercentChanged += (sender, args) => {
+					ConsoleEx.WriteBar(args);
+				};
+
+				journal = xmlJournal;
+			} else if (Configuration.JournalType.Equals("mysql", StringComparison.InvariantCultureIgnoreCase) == true) {
+				Wolfje.Plugins.SEconomy.Journal.MySQLJournal.MySQLTransactionJournal sqlJournal = new Journal.MySQLJournal.MySQLTransactionJournal(this, Configuration.SQLConnectionProperties);
+				sqlJournal.JournalLoadingPercentChanged += (sender, args) => {
+					ConsoleEx.WriteBar(args);
+				};
+
+				journal = sqlJournal;
+			}
+
+			this.RunningJournal = journal;
+			this.RunningJournal.LoadJournal();
 		}
 
 		/// <summary>
