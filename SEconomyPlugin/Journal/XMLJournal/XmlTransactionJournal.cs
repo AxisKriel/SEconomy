@@ -47,7 +47,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			this.SEconomyInstance = Parent;
 			this.path = JournalSavePath;
 
-			if (Parent.Configuration.JournalBackupMinutes > 0) {
+			if (Parent != null && Parent.Configuration.JournalBackupMinutes > 0) {
 				JournalBackupTimer = new System.Timers.Timer(Parent.Configuration.JournalBackupMinutes * 60000);
 				JournalBackupTimer.Elapsed += JournalBackupTimer_Elapsed;
 				this.BackupsEnabled = true;

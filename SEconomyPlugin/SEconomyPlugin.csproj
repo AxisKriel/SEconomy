@@ -31,14 +31,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MySql.Data, Version=6.4.4.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\References\MySql.Data.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\References\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.Entity" />
-    <Reference Include="System.Data.Entity.Design" />
     <Reference Include="System.Data.Linq" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
@@ -61,6 +63,10 @@
     <Compile Include="Economy\Money.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="EventHandlers.cs" />
+    <Compile Include="Extensions\DataReaderExtensions.cs" />
+    <Compile Include="Extensions\MySqlCommand.Extensions.cs" />
+    <Compile Include="Extensions\MySqlConnection.Extensions.cs" />
+    <Compile Include="Extensions\QueryResult.Extensions.cs" />
     <Compile Include="Extensions\String.Extensions.cs" />
     <Compile Include="Extensions\TShockCommand.Extensions.cs" />
     <Compile Include="Extensions\Type.Extensions.cs" />
@@ -85,11 +91,6 @@
     <Compile Include="Journal\ITransaction.cs" />
     <Compile Include="Journal\ITransactionJournal.cs" />
     <Compile Include="Journal\MySQLJournal\MySQLBankAccount.cs" />
-    <Compile Include="Journal\MySQLJournal\Database\MySQLJournal.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>MySQLJournal.edmx</DependentUpon>
-    </Compile>
     <Compile Include="Journal\MySQLJournal\MySQLTransaction.cs" />
     <Compile Include="Journal\MySQLJournal\MySQLTransactionJournal.cs" />
     <Compile Include="Journal\PendingTransactionEventArgs.cs" />
@@ -137,16 +138,7 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <EntityDeploy Include="Journal\MySQLJournal\Database\MySQLJournal.edmx">
-      <Generator>EntityModelCodeGenerator</Generator>
-      <LastGenOutput>MySQLJournal.Designer.cs</LastGenOutput>
-    </EntityDeploy>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="App.Config" />
-    <None Include="Journal\MySQLJournal\Database\MySQLJournal.edmx.diagram">
-      <DependentUpon>MySQLJournal.edmx</DependentUpon>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

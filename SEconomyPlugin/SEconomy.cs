@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Wolfje.Plugins.SEconomy {
 	public class SEconomy : IDisposable {
-		public Journal.ITransactionJournal RunningJournal { get; internal set; }
-		public Config Configuration { get; private set; }
+		public Journal.ITransactionJournal RunningJournal { get; set; }
+		public Config Configuration { get; set; }
 		public SEconomyPlugin PluginInstance { get; set; }
 
 		public Journal.JournalTransactionCache TransactionCache { get; set; }

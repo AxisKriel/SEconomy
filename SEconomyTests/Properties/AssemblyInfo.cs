@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("JistAliasPlugin")]
+[assembly: AssemblyTitle("SEconomyTests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("JistAliasPlugin")]
+[assembly: AssemblyProduct("SEconomyTests")]
 [assembly: AssemblyCopyright("Copyright ©  2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("e9e82406-49c3-4586-b5e4-bcbc1a6379b3")]
+[assembly: Guid("e4395f2b-07a9-4f35-b861-10c2ec85ba7f")]
 
 // Version information for an assembly consists of the following four values:
 //

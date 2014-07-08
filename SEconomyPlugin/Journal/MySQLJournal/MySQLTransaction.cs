@@ -45,7 +45,5 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		}
 
 		#endregion
-
-		public object TransactionObject { get; set; }
 	}
 }

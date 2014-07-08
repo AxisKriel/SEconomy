@@ -2,22 +2,32 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Wolfje.Plugins.SEconomy.Journal.XMLJournal;
+using MySql.Data.MySqlClient;
+using TShockAPI.DB;
+using TShockAPI.Extensions;
+using Wolfje.Plugins.SEconomy.Extensions;
+using System.Data;
+using System.Diagnostics;
 
 namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 	public class MySQLTransactionJournal : ITransactionJournal {
 		protected string connectionString;
 		protected List<IBankAccount> bankAccounts;
-		
+		protected MySqlConnection mysqlConnection;
+
 		public MySQLTransactionJournal(SEconomy instance, Configuration.SQLConnectionProperties sqlProperties)
 		{
 			if (string.IsNullOrEmpty(sqlProperties.DbOverrideConnectionString) == false) {
 				this.connectionString = sqlProperties.DbOverrideConnectionString;
 			}
-
-			this.connectionString = string.Format("metadata=res://*/Journal.MySQLJournal.Database.MySQLJournal.csdl|res://*/Journal.MySQLJournal.Database.MySQLJournal.ssdl|res://*/Journal.MySQLJournal.Database.MySQLJournal.msl;provider=MySql.Data.MySqlClient;provider connection string=\"server={0};user id={2};database={1};password={3}\"", sqlProperties.DbHost, sqlProperties.DbName, sqlProperties.DbUsername, sqlProperties.DbPassword);
+			
+			this.connectionString = string.Format("server={0};user id={2};database={1};password={3}", sqlProperties.DbHost, sqlProperties.DbName, 
+				sqlProperties.DbUsername, sqlProperties.DbPassword);
 			this.SEconomyInstance = instance;
+
+			this.mysqlConnection = new MySqlConnection(connectionString);
 		}
 
 		#region ITransactionJournal Members
@@ -27,8 +37,6 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		public event EventHandler<JournalLoadingPercentChangedEventArgs> JournalLoadingPercentChanged;
 
 		public SEconomy SEconomyInstance { get; set; }
-
-
 
 		public List<IBankAccount> BankAccounts
 		{
@@ -40,9 +48,12 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			get { return null; }
 		}
 
-		public Database.Context GetContext()
+		public MySqlConnection Connection
 		{
-			return new Database.Context(connectionString);
+			get
+			{
+				return mysqlConnection;
+			}
 		}
 
 		public IBankAccount AddBankAccount(string UserAccountName, long WorldID, BankAccountFlags Flags, string iDonoLol)
@@ -57,24 +68,21 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public IBankAccount AddBankAccount(IBankAccount Account)
 		{
-			using (Database.Context db = GetContext()) {
-				try {
-					Database.bank_account acct = new Database.bank_account() {
-						user_account_name = Account.UserAccountName,
-						description = Account.Description,
-						flags = (int)Account.Flags,
-						world_id = Account.WorldID
-					};
+			long id = 0;
+			string query = @"INSERT INTO `bank_account` 
+									(user_account_name, world_id, flags, flags2, description)
+								  VALUES (@0, @1, @2, @3, @4);";
 
-					db.bank_account.AddObject(acct);
-					db.SaveChanges();
-					Account.BankAccountK = acct.bank_account_id;
-					BankAccounts.Add(Account);
-				} catch (Exception ex) {
-					TShockAPI.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
-					return null;
-				}
+			try {
+				Connection.QueryIdentity(query, out id, Account.UserAccountName, Account.WorldID, 
+					(int)Account.Flags, 0, Account.Description);
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
+				return null;
 			}
+
+			Account.BankAccountK = id;
+			BankAccounts.Add(Account);
 			
 			return Account;
 		}
@@ -96,18 +104,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public void DeleteBankAccount(long BankAccountK)
 		{
-			using (Database.Context db = GetContext()) {
-				Database.bank_account account = db.bank_account.FirstOrDefault(i => i.bank_account_id == BankAccountK);
-				if (account == null) {
-					return;
-				}
-
-				db.bank_account.DeleteObject(account);
-				db.SaveChanges();
-			}
-			bankAccounts.RemoveAll(i => i.BankAccountK == BankAccountK);
+			int affected = Connection.Query("DELETE FROM `bank_account` WHERE `bank_account_id` = @0", BankAccountK);
 		}
-
 
 		public bool JournalSaving { get; set; }
 
@@ -125,45 +123,28 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public void LoadJournal()
 		{
-			Database.Context db = GetContext();
-			long bankAccountCount = 0;
-			int oldPercent = 0;
+			long bankAccountCount = 0, tranCount = 0;
+			int index = 0, oldPercent = 0;
+			double percentComplete = 0;
 			JournalLoadingPercentChangedEventArgs parsingArgs = new JournalLoadingPercentChangedEventArgs() {
-				Label = "SQL"
+				Label = "Loading"
 			};
 
 			try {
 				if (JournalLoadingPercentChanged != null) {
 					JournalLoadingPercentChanged(this, parsingArgs);
 				}
-
-				if (db.DatabaseExists() == false) {
-					db.CreateDatabase();
-					db.SaveChanges();
-				}
+				
+				//TODO: Create schema
 
 				bankAccounts = new List<IBankAccount>();
-				bankAccountCount = db.bank_account.Count();
-
-				for (int i = 0; i <= bankAccountCount; i++) {
-					Database.bank_account acc = null;
-					MySQLBankAccount sqlAccount = null;
-					double percentComplete = (double)i / (double)bankAccountCount * 100;
-
-					if ((acc = db.bank_account.AsEnumerable().ElementAtOrDefault(i)) == null) {
-						continue;
-					}
-
-					sqlAccount = new MySQLBankAccount(this) {
-						BankAccountK = acc.bank_account_id,
-						Description = acc.description,
-						Flags = (BankAccountFlags)Enum.Parse(typeof(BankAccountFlags), acc.flags.ToString()),
-						UserAccountName = acc.user_account_name,
-						WorldID = acc.world_id
-					};
-
-					sqlAccount.SyncBalance();
-					bankAccounts.Add(sqlAccount);
+				bankAccountCount = Connection.QueryScalar<long>("SELECT COUNT(*) from `bank_account`;");
+				tranCount = Connection.QueryScalar<long>("SELECT COUNT(*) FROM `bank_account_transaction`;");
+				
+				QueryResult bankAccountResult = Connection.QueryReader("SELECT * FROM `bank_account`;");
+				
+				Action<int> percentCompleteFunc = i => {
+					percentComplete = (double)i / (double)bankAccountCount * 100;
 
 					if (oldPercent != (int)percentComplete) {
 						parsingArgs.Percent = (int)percentComplete;
@@ -172,16 +153,38 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 						}
 						oldPercent = (int)percentComplete;
 					}
+				};
+
+				foreach (var acc in bankAccountResult.AsEnumerable()) {
+					MySQLBankAccount sqlAccount = null;
+					sqlAccount = new MySQLBankAccount(this) {
+						BankAccountK = acc.Get<long>("bank_account_id"),
+						Description = acc.Get<string>("description"),
+						Flags = (BankAccountFlags)Enum.Parse(typeof(BankAccountFlags), acc.Get<int>("flags").ToString()),
+						UserAccountName = acc.Get<string>("user_account_name"),
+						WorldID = acc.Get<long>("world_id")
+					};
+
+					sqlAccount.SyncBalance();
+					lock (bankAccounts) {
+						bankAccounts.Add(sqlAccount);
+					}
+
+					Interlocked.Increment(ref index);
+					percentCompleteFunc(index);
 				}
 
 				parsingArgs.Percent = 100;
 				if (JournalLoadingPercentChanged != null) {
 					JournalLoadingPercentChanged(this, parsingArgs);
 				}
+
+				Console.WriteLine("\r\n");
+				Console.WriteLine(" Journal clean: {0} accounts, {1} transactions", BankAccounts.Count(), tranCount);
 			} catch(Exception ex) {
 				TShockAPI.Log.ConsoleError(" seconomy mysql: db error in LoadJournal: " + ex.ToString());
 			} finally {
-				db.Dispose();
+				
 			}
 		}
 
@@ -214,81 +217,121 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			return ((FromAccount.IsSystemAccount || FromAccount.IsPluginAccount || ((Options & Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount) == Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount)) || (FromAccount.Balance >= MoneyNeeded && MoneyNeeded > 0));
 		}
 
-		Database.bank_account_transaction BeginSourceTransaction(Database.Context context, long BankAccountK, Money Amount, string Message)
+		ITransaction BeginSourceTransaction(long BankAccountK, Money Amount, string Message)
 		{
-			IBankAccount bankAccount = GetBankAccount(BankAccountK);
-			Database.bank_account_transaction txn = null;
-			if (bankAccount == null) {
+			MySQLTransaction trans = null;
+			long idenitity = -1;
+			string query = @"INSERT INTO `bank_account_transaction` 
+								(bank_account_fk, amount, message, flags, flags2, transaction_date_utc)
+							VALUES (@0, @1, @2, @3, @4, @5);
+							";
+			IBankAccount account = null;
+			if ((account = GetBankAccount(BankAccountK)) == null) {
+				return null;
+			}
+			trans = new MySQLTransaction(account) {
+				Amount = (-1) * Amount,
+				BankAccountFK = account.BankAccountK,
+				Flags = BankAccountTransactionFlags.FundsAvailable,
+				Message = Message,
+				TransactionDateUtc = DateTime.UtcNow
+			};
+
+			try {
+				Connection.QueryIdentity(query, out idenitity, trans.BankAccountFK, (long)trans.Amount, trans.Message,
+					(int)BankAccountTransactionFlags.FundsAvailable, 0, DateTime.UtcNow);
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in BeginSourceTransaction: " + ex.Message);
 				return null;
 			}
 
-			txn = new Database.bank_account_transaction() {
-				bank_account_fk = bankAccount.BankAccountK,
-				amount = (-1) * Amount,
-				flags = (int)Journal.BankAccountTransactionFlags.FundsAvailable,
-				transaction_date_utc = DateTime.UtcNow
-			};
+			trans.BankAccountTransactionK = idenitity;
 
-			if (string.IsNullOrEmpty(Message) == false) {
-				txn.message = Message;
-			}
-
-			context.bank_account_transaction.AddObject(txn);
-
-			return txn;
+			return trans;
 		}
 
-		Database.bank_account_transaction FinishEndTransaction(Database.Context context, IBankAccount ToAccount, Money Amount, string Message)
+		ITransaction FinishEndTransaction(IBankAccount ToAccount, Money Amount, string Message)
 		{
-			IBankAccount bankAccount = GetBankAccount(ToAccount.BankAccountK);
-			Database.bank_account_transaction txn = null;
-			if (bankAccount == null) {
+			MySQLTransaction trans = null;
+			long idenitity = -1;
+			string query = @"INSERT INTO `bank_account_transaction` 
+								(bank_account_fk, amount, message, flags, flags2, transaction_date_utc)
+							VALUES (@0, @1, @2, @3, @4, @5);
+							";
+			IBankAccount account = null;
+			if ((account = GetBankAccount(ToAccount.BankAccountK)) == null) {
+				return null;
+			}
+			trans = new MySQLTransaction(account) {
+				Amount = Amount,
+				BankAccountFK = account.BankAccountK,
+				Flags = BankAccountTransactionFlags.FundsAvailable,
+				Message = Message,
+				TransactionDateUtc = DateTime.UtcNow
+			};
+
+			try {
+				Connection.QueryIdentity(query, out idenitity, trans.BankAccountFK, (long)trans.Amount, trans.Message,
+					(int)BankAccountTransactionFlags.FundsAvailable, 0, DateTime.UtcNow);
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in FinishEndTransaction: " + ex.Message);
 				return null;
 			}
 
-			txn = new Database.bank_account_transaction() {
-				bank_account_fk = bankAccount.BankAccountK,
-				amount = Amount,
-				flags = (int)Journal.BankAccountTransactionFlags.FundsAvailable,
-				transaction_date_utc = DateTime.UtcNow
-			};
+			trans.BankAccountTransactionK = idenitity;
 
-			if (string.IsNullOrEmpty(Message) == false) {
-				txn.message = Message;
-			}
-
-			context.bank_account_transaction.AddObject(txn);
-
-			return txn;
+			return trans;
 		}
 
-		public int BindTransactions(ref Database.bank_account_transaction Source, ref Database.bank_account_transaction Dest)
+		public void BindTransactions(long SourceBankTransactionK, long DestBankTransactionK)
 		{
-			if (Source == null || Dest == null) {
-				return -1;
+			int updated = -1;
+			string query = @"UPDATE `bank_account_transaction` 
+							 SET `bank_account_transaction_fk` = @0
+							 WHERE `bank_account_transaction_id` = @1";
+
+			try {
+				if ((updated = Connection.Query(query, SourceBankTransactionK, DestBankTransactionK)) != 1) {
+					TShockAPI.Log.ConsoleError(" seconomy mysql:  Error in BindTransactions: updated row count was " + updated);
+				}
+
+				if ((updated = Connection.Query(query, DestBankTransactionK, SourceBankTransactionK)) != 1) {
+					TShockAPI.Log.ConsoleError(" seconomy mysql:  Error in BindTransactions: updated row count was " + updated);
+				}
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in BindTransactions: " + ex.Message);
+				return;
 			}
-
-			Source.bank_account_transaction_inverse = Dest;
-			Dest.bank_account_transaction_inverse = Source;
-
-			return 0;
 		}
+
 
 		public BankTransferEventArgs TransferBetween(IBankAccount FromAccount, IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)
 		{
+			long accountCount = -1;
 			PendingTransactionEventArgs pendingTransaction = new PendingTransactionEventArgs(FromAccount, ToAccount, Amount, Options, TransactionMessage, JournalMessage);
-			Database.bank_account sourceAccount = null;
-			Database.bank_account_transaction sourceTran, destTran;
-			Database.Context db = GetContext();
+			ITransaction sourceTran, destTran;
 			BankTransferEventArgs args = new BankTransferEventArgs() {
 				TransferSucceeded = false
 			};
+			string accountVerifyQuery = @"SELECT COUNT(*)
+										  FROM `bank_account`
+										  WHERE	`bank_account_id` = @0;";
 
+			Stopwatch sw = new Stopwatch();
+			if (SEconomyInstance.Configuration.EnableProfiler == true) {
+				sw.Start();
+			}
 			if (ToAccount == null && TransferMaySucceed(FromAccount, ToAccount, Amount, Options) == false) {
 				return args;
 			}
 
-			if ((sourceAccount = db.bank_account.FirstOrDefault(i => i.bank_account_id == FromAccount.BankAccountK)) == null) {
+			if ( (accountCount = Connection.QueryScalar<long>(accountVerifyQuery, FromAccount.BankAccountK)) != 1) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
+				return args;
+			}
+
+			if ( (accountCount = Connection.QueryScalar<long>(accountVerifyQuery, ToAccount.BankAccountK)) != 1) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
 				return args;
 			}
 
@@ -303,30 +346,19 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			args.TransactionMessage = pendingTransaction.TransactionMessage;
 
 			try {
-				sourceTran = BeginSourceTransaction(db, FromAccount.BankAccountK, Amount, JournalMessage);
-				
-				if (sourceTran == null) {
+				if ((sourceTran = BeginSourceTransaction(FromAccount.BankAccountK, Amount, JournalMessage)) == null) {
 					throw new Exception("BeginSourceTransaction failed");
 				}
 
-				destTran = FinishEndTransaction(db, ToAccount, Amount, JournalMessage);
-				if (destTran == null) {
+				if ((destTran = FinishEndTransaction(ToAccount, Amount, JournalMessage)) == null) {
 					throw new Exception("FinishEndTransaction failed");
 				}
 
-				db.SaveChanges();
-
-				if (BindTransactions(ref sourceTran, ref destTran) < 0) {
-					throw new Exception("BindTransactions failed");
-				}
-
-				db.SaveChanges();
+				BindTransactions(sourceTran.BankAccountTransactionK, destTran.BankAccountTransactionK);
 			} catch (Exception ex) {
 				TShockAPI.Log.ConsoleError(" seconomy mysql: database error in transfer:" + ex.ToString());
 				args.Exception = ex;
 				return args;
-			} finally {
-				db.Dispose();
 			}
 			
 			FromAccount.SyncBalance();
@@ -335,6 +367,11 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			args.TransferSucceeded = true;
 			if (BankTransferCompleted != null) {
 				BankTransferCompleted(this, args);
+			}
+
+			if (SEconomyInstance.Configuration.EnableProfiler == true) {
+				sw.Stop();
+				TShockAPI.Log.ConsoleInfo("seconomy mysql: transfer took {0} ms", sw.ElapsedMilliseconds);
 			}
 
 			return args;

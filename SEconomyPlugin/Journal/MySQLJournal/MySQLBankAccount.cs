@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TShockAPI.DB;
+using TShockAPI.Extensions;
+using Wolfje.Plugins.SEconomy.Extensions;
 
 
 namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
@@ -65,7 +69,27 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public List<ITransaction> Transactions
 		{
-			get { return null; }
+			get {
+				List<ITransaction> tranList = new List<ITransaction>();
+
+				using (QueryResult reader = journal.Connection.QueryReader("SELECT * FROM `bank_account_transaction` WHERE `bank_account_fk` = " + this.BankAccountK + ";")) {
+					foreach (IDataReader item in reader.AsEnumerable()) {
+						MySQLTransaction bankTrans = new MySQLTransaction((IBankAccount)this) {
+							BankAccountFK = item.Get<long>("bank_account_fk"),
+							BankAccountTransactionK = item.Get<long>("bank_account_transaction_id"),
+							BankAccountTransactionFK = item.Get<long?>("bank_account_transaction_fk").GetValueOrDefault(-1L),
+							Flags = (BankAccountTransactionFlags)item.Get<int>("flags"),
+							TransactionDateUtc = item.GetDateTime(reader.Reader.GetOrdinal("transaction_date_utc")),
+							Amount = item.Get<long>("amount"),
+							Message = item.Get<string>("message")
+						};
+
+						tranList.Add(bankTrans);
+					}
+				}
+
+				return tranList;
+			}
 		}
 
 		public ITransaction AddTransaction(ITransaction Transaction)
@@ -75,44 +99,29 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public void ResetAccountTransactions(long BankAccountK)
 		{
-			using (var db = journal.GetContext()) {
-				Database.bank_account bankAccount = null;
-				
-				if ((bankAccount = db.bank_account.FirstOrDefault(i => i.bank_account_id == BankAccountK)) == null) {
-					return;
-				}
-
-				try {
-					bankAccount.bank_account_transactions.Clear();
-					db.SaveChanges();
-					this.Balance = 0;
-				} catch (Exception ex) {
-					TShockAPI.Log.ConsoleError(" seconomy mysql:  database error in ResetAccountTransactions: " + ex.ToString());
-				}
+			try {
+				journal.Connection.Query("DELETE FROM `bank_account_transaction` WHERE `bank_account_fk` = " + this.BankAccountK + ";");
+			} catch {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: MySQL command error in ResetAccountTransactions");
 			}
 		}
-
 		public async Task ResetAccountTransactionsAsync(long BankAccountK)
 		{
 			await Task.Run(() => ResetAccountTransactions(BankAccountK));
 		}
 
-		public void SyncBalance()
-		{
-			using (var db = journal.GetContext()) {
-				IQueryable<Database.bank_account_transaction> accountTrans = db.bank_account_transaction.Where(i => i.bank_account_fk == this.BankAccountK);
-				if (accountTrans == null || accountTrans.Count() == 0) {
-					this.Balance = 0;
-					return;
-				}
-
-				this.Balance = accountTrans.Sum(i => i.amount);
-			}
-		}
-
 		public async Task SyncBalanceAsync()
 		{
 			await Task.Run(() => SyncBalance());
+		}
+
+		public void SyncBalance()
+		{
+			try {
+				this.Balance = Convert.ToInt64(journal.Connection.QueryScalar<decimal>("SELECT IFNULL(SUM(Amount), 0) FROM `bank_account_transaction` WHERE `bank_account_transaction`.`bank_account_fk` = " + this.BankAccountK + ";"));
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: SQL error in SyncBalance: " + ex.Message);
+			}
 		}
 
 		public BankTransferEventArgs TransferTo(IBankAccount Account, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)
@@ -136,5 +145,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		}
 
 		#endregion
+
+		public override string ToString()
+		{
+			return string.Format("MySQLBankAccount {0} UserAccountName={1} Balance={2}", this.BankAccountK, this.UserAccountName, this.BankAccountK);
+		}
 	}
 }

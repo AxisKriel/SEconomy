@@ -95,21 +95,5 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			}
 		}
 
-		#region ITransaction Members
-
-
-		public object TransactionObject
-		{
-			get
-			{
-				throw new NotImplementedException();
-			}
-			set
-			{
-				throw new NotImplementedException();
-			}
-		}
-
-		#endregion
 	}
 }

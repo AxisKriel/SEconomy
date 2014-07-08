@@ -25,8 +25,6 @@ namespace Wolfje.Plugins.SEconomy {
     /// </summary>
     [ApiVersion(1, 16)]
     public class SEconomyPlugin : TerrariaPlugin {
-
-		protected static SEconomy _seconomyInstance = null;
 		public static Lang.Localization Locale { get; private set; }
 
         #region "API Plugin Stub"
@@ -64,13 +62,7 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// The loaded instance of SEconomy.  This field can be null.
 		/// </summary>
-		public static SEconomy Instance
-		{
-			get
-			{
-				return _seconomyInstance;
-			}
-		}
+		public static SEconomy Instance { get; set; }
 
         public SEconomyPlugin(Main Game) : base(Game) {
             Order = 20000;
@@ -84,7 +76,7 @@ namespace Wolfje.Plugins.SEconomy {
 			PrintIntro();
 
 			TShockAPI.Commands.ChatCommands.Add(new TShockAPI.Command(TShock_CommandExecuted, "seconomy", "sec"));
-			_seconomyInstance = new SEconomy(this);
+			Instance = new SEconomy(this);
 			Instance.LoadSEconomy();
 		}
 
@@ -131,14 +123,14 @@ namespace Wolfje.Plugins.SEconomy {
 				&& args.Player.Group.HasPermission("seconomy.command.reload") == true) {
 				
 					await Task.Run(async () => {
-						if (_seconomyInstance != null) {
-							_seconomyInstance.Dispose();
-							_seconomyInstance = null;
+						if (Instance != null) {
+							Instance.Dispose();
+							Instance = null;
 						}
 
-						_seconomyInstance = new SEconomy(this);
-						_seconomyInstance.LoadSEconomy();
-						await _seconomyInstance.BindToWorldAsync();
+						Instance = new SEconomy(this);
+						Instance.LoadSEconomy();
+						await Instance.BindToWorldAsync();
 					});
 
 					args.Player.SendSuccessMessage(Locale.StringOrDefault(8, "SEconomy is reloaded."));
@@ -146,14 +138,14 @@ namespace Wolfje.Plugins.SEconomy {
 
 			if (args.Parameters[0].Equals("stop", StringComparison.CurrentCultureIgnoreCase)
 				&& args.Player.Group.HasPermission("seconomy.command.stop") == true) {
-				if (_seconomyInstance == null) {
+					if (Instance == null) {
 					args.Player.SendErrorMessage(Locale.StringOrDefault(9, "seconomy stop: SEconomy is already stopped. Use /sec start to start"));
 					return;
 				}
 
 				await Task.Run(() => {
-					_seconomyInstance.Dispose();
-					_seconomyInstance = null;
+					Instance.Dispose();
+					Instance = null;
 				});
 
 				args.Player.SendSuccessMessage(Locale.StringOrDefault(10, "SEconomy is stopped."));
@@ -161,15 +153,15 @@ namespace Wolfje.Plugins.SEconomy {
 
 			if (args.Parameters[0].Equals("start", StringComparison.CurrentCultureIgnoreCase)
 				&& args.Player.Group.HasPermission("seconomy.command.start") == true) {
-				if (_seconomyInstance != null) {
+					if (Instance != null) {
 					args.Player.SendErrorMessage(Locale.StringOrDefault(11, "seconomy stop: SEconomy is already started. Use /sec stop to stop."));
 					return;
 				}
 				try {
 					await Task.Run(async () => {
-						_seconomyInstance = new SEconomy(this);
-						_seconomyInstance.LoadSEconomy();
-						await _seconomyInstance.BindToWorldAsync();
+						Instance = new SEconomy(this);
+						Instance.LoadSEconomy();
+						await Instance.BindToWorldAsync();
 					});
 				} catch {
 					args.Player.SendErrorMessage(Locale.StringOrDefault(12, "SEconomy failed to initialize, and will be unavailable for this session."));
@@ -182,8 +174,8 @@ namespace Wolfje.Plugins.SEconomy {
         protected override void Dispose(bool disposing) {
 
             if (disposing) {
-				_seconomyInstance.Dispose();
-				_seconomyInstance = null;
+				Instance.Dispose();
+				Instance = null;
             }
 
             base.Dispose(disposing);

@@ -12,6 +12,7 @@ namespace Wolfje.Plugins.SEconomy {
 		{
 			StringBuilder output = new StringBuilder();
 			int fillLen = 0;
+			char filler = '#', spacer = ' ';
 
 			output.Append(" ");
 			for (int i = 0; i < 10; i++) {
@@ -24,16 +25,18 @@ namespace Wolfje.Plugins.SEconomy {
 			fillLen = Convert.ToInt32(((decimal)args.Percent / 100) * 60);
 
 			for (int i = 0; i < 60; i++) {
-				output.Append(i <= fillLen ? "#" : " ");
+				output.Append(i <= fillLen ? filler : spacer);
 			}
 
 			output.Append("] ");
 			output.Append(args.Percent + "%");
 
-			Console.Write("\r");
-			Console.ForegroundColor = ConsoleColor.Cyan;
-			Console.Write(output.ToString());
-			Console.ResetColor();
+			lock (__consoleWriteLock) {
+				Console.Write("\r");
+				Console.ForegroundColor = ConsoleColor.Cyan;
+				Console.Write(output.ToString());
+				Console.ResetColor();
+			}
 		}
 
 		public static void WriteAtEnd(int Padding, ConsoleColor Colour, string MessageFormat, params object[] args)

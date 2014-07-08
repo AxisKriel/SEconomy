@@ -22,8 +22,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         IBankAccount BankAccount { get; }
         ITransaction OppositeTransaction { get; }
 
-		object TransactionObject { get; set; }
-
         Dictionary<string, object> CustomValues { get; }
     }
 }

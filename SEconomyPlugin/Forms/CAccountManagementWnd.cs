@@ -69,11 +69,9 @@ namespace Wolfje.Plugins.SEconomy.Forms {
 				lblStatus.Text = "Syncing accounts";
 			});
 
-
 			foreach (Journal.IBankAccount account in SecInstance.RunningJournal.BankAccounts) {
 				int p = Convert.ToInt32(((double)i / (double)SecInstance.RunningJournal.BankAccounts.Count) * 100);
 
-				await account.SyncBalanceAsync();
 				sourceAccList.Add(new AccountSummary() { Name = account.UserAccountName, Balance = account.Balance, Value = account.BankAccountK });
 				this.MainThreadInvoke(() => {
 					toolStripProgressBar1.Value = p;
