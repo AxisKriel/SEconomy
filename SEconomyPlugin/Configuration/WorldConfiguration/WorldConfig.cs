@@ -6,13 +6,16 @@ using Newtonsoft.Json;
 
 namespace Wolfje.Plugins.SEconomy.Configuration.WorldConfiguration {
     public class WorldConfig {
-
         public bool MoneyFromNPCEnabled = true;
         public bool MoneyFromBossEnabled = true;
         public bool MoneyFromPVPEnabled = true;
 
         public bool AnnounceNPCKillGains = true;
         public bool AnnounceBossKillGains = true;
+
+		public bool StaticDeathPenalty = false;
+		public long StaticPenaltyAmount = 0;
+		public List<StaticPenaltyOverride> StaticPenaltyOverrides = new List<StaticPenaltyOverride>();
 
         public bool KillerTakesDeathPenalty = true;
         public decimal DeathPenaltyPercentValue = 10.0M;
@@ -29,17 +32,12 @@ namespace Wolfje.Plugins.SEconomy.Configuration.WorldConfiguration {
 
             try {
                 string fileText = System.IO.File.ReadAllText(Path);
-
                 config = JsonConvert.DeserializeObject<WorldConfig>(fileText);
-
             } catch (Exception ex) {
                 if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
                     TShockAPI.Log.ConsoleError("seconomy worldconfig: Cannot find file or directory. Creating new one.");
-
                     config = WorldConfig.NewSampleConfiguration();
-
                     config.SaveConfiguration(Path);
-
                 } else if (ex is System.Security.SecurityException) {
                     TShockAPI.Log.ConsoleError("seconomy worldconfig: Access denied reading file " + Path);
                 } else {
@@ -57,7 +55,8 @@ namespace Wolfje.Plugins.SEconomy.Configuration.WorldConfiguration {
             foreach (int bannedMobID in bannedMobs) {
                 newConfig.Overrides.Add(new NPCRewardOverride() { NPCID = bannedMobID, OverridenMoneyPerDamagePoint = 0.0M });
             }
-            
+
+			newConfig.StaticPenaltyOverrides.Add(new StaticPenaltyOverride());
             return newConfig;
         }
 
@@ -84,4 +83,9 @@ namespace Wolfje.Plugins.SEconomy.Configuration.WorldConfiguration {
         public int NPCID = 0;
         public decimal OverridenMoneyPerDamagePoint = 1.0M;
     }
+
+	public class StaticPenaltyOverride {
+		public string TShockGroup = "group";
+		public long StaticRewardOverride = 0;
+	}
 }

@@ -5,53 +5,54 @@ using System.Threading;
 
 using TerrariaApi.Server;
 using Terraria;
+using Wolfje.Plugins.SEconomy.Configuration.WorldConfiguration;
 
 namespace Wolfje.Plugins.SEconomy {
 
-    /// <summary>
-    /// World economy. Provides monetary gain and loss as a result of interaction in the world, including mobs and players
-    /// </summary>
-    public class WorldEconomy : IDisposable {
+	/// <summary>
+	/// World economy. Provides monetary gain and loss as a result of interaction in the world, including mobs and players
+	/// </summary>
+	public class WorldEconomy : IDisposable {
 		protected SEconomy Parent { get; set; }
 
-        /// <summary>
-        /// Format for this dictionary:
-        /// Key: NPC
-        /// Value: A list of players who have done damage to the NPC
-        /// </summary>
-        private Dictionary<Terraria.NPC, List<PlayerDamage>> DamageDictionary = new Dictionary<Terraria.NPC, List<PlayerDamage>>();
+		/// <summary>
+		/// Format for this dictionary:
+		/// Key: NPC
+		/// Value: A list of players who have done damage to the NPC
+		/// </summary>
+		private Dictionary<Terraria.NPC, List<PlayerDamage>> DamageDictionary = new Dictionary<Terraria.NPC, List<PlayerDamage>>();
 
-        /// <summary>
-        /// Format for this dictionary:
-        /// * key: Player ID
-        /// * value: Last player hit ID
-        /// </summary>
-        protected Dictionary<int, int> PVPDamage = new Dictionary<int, int>();
+		/// <summary>
+		/// Format for this dictionary:
+		/// * key: Player ID
+		/// * value: Last player hit ID
+		/// </summary>
+		protected Dictionary<int, int> PVPDamage = new Dictionary<int, int>();
 
-        /// <summary>
-        /// synch object for access to the dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
-        /// </summary>
-        protected readonly object __dictionaryLock = new object();
+		/// <summary>
+		/// synch object for access to the dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
+		/// </summary>
+		protected readonly object __dictionaryLock = new object();
 
-        /// <summary>
-        /// synch object for access to the pvp dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
-        /// </summary>
+		/// <summary>
+		/// synch object for access to the pvp dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
+		/// </summary>
 		protected readonly object __pvpLock = new object();
 
-        /// <summary>
-        /// Synch object for access to the packet handler critical sections, forcing packets to be marshalled in a serialized manner.
-        /// </summary>
-        protected readonly object __packetHandlerMutex = new object();
+		/// <summary>
+		/// Synch object for access to the packet handler critical sections, forcing packets to be marshalled in a serialized manner.
+		/// </summary>
+		protected readonly object __packetHandlerMutex = new object();
 
 		/// <summary>
 		/// Synch object for NPC damage, forcing NPC damages to be serialized
 		/// </summary>
 		protected static readonly object __NPCDamageMutex = new object();
 
-        /// <summary>
-        /// World configuration node, from TShock\SEconomy\SEconomy.WorldConfig.json
-        /// </summary>
-        public Configuration.WorldConfiguration.WorldConfig WorldConfiguration { get; private set; }
+		/// <summary>
+		/// World configuration node, from TShock\SEconomy\SEconomy.WorldConfig.json
+		/// </summary>
+		public Configuration.WorldConfiguration.WorldConfig WorldConfiguration { get; private set; }
 
 
 		public WorldEconomy(SEconomy parent)
@@ -79,25 +80,27 @@ namespace Wolfje.Plugins.SEconomy {
 			}
 		}
 
-        protected void Game_Update(EventArgs args) {
-            foreach (Terraria.NPC npc in Terraria.Main.npc) {
-                if (npc == null || npc.townNPC == true) {
-                    continue;
-                }
+		protected void Game_Update(EventArgs args)
+		{
+			foreach (Terraria.NPC npc in Terraria.Main.npc) {
+				if (npc == null || npc.townNPC == true) {
+					continue;
+				}
 
-                if (npc.active == false) {
-                    GiveRewardsForNPC(npc);
-                }
-            }
-        }
+				if (npc.active == false) {
+					GiveRewardsForNPC(npc);
+				}
+			}
+		}
 
-        #region "NPC Reward handling"
-        /// <summary>
-        /// Adds damage done by a player to an NPC slot.  When the NPC dies the rewards for it will fill out.
-        /// </summary>
-        protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage, bool crit = false) {
-            List<PlayerDamage> damageList = null;
-            PlayerDamage playerDamage = null;
+		#region "NPC Reward handling"
+		/// <summary>
+		/// Adds damage done by a player to an NPC slot.  When the NPC dies the rewards for it will fill out.
+		/// </summary>
+		protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage, bool crit = false)
+		{
+			List<PlayerDamage> damageList = null;
+			PlayerDamage playerDamage = null;
 			double dmg;
 
 			lock (__NPCDamageMutex) {
@@ -123,15 +126,16 @@ namespace Wolfje.Plugins.SEconomy {
 
 				playerDamage.Damage += dmg;
 			}
-        }
+		}
 
-        /// <summary>
-        /// Should occur when an NPC dies; gives rewards out to all the players that hit it.
-        /// </summary>
-        protected void GiveRewardsForNPC(Terraria.NPC NPC) {
-            List<PlayerDamage> playerDamageList = null;
-            Economy.EconomyPlayer ePlayer = null;
-            Money rewardMoney = 0L;
+		/// <summary>
+		/// Should occur when an NPC dies; gives rewards out to all the players that hit it.
+		/// </summary>
+		protected void GiveRewardsForNPC(Terraria.NPC NPC)
+		{
+			List<PlayerDamage> playerDamageList = null;
+			Economy.EconomyPlayer ePlayer = null;
+			Money rewardMoney = 0L;
 
 			if (DamageDictionary.ContainsKey(NPC)) {
 				playerDamageList = DamageDictionary[NPC];
@@ -141,9 +145,9 @@ namespace Wolfje.Plugins.SEconomy {
 				}
 			}
 
-            if (playerDamageList == null) {
-                return;
-            }
+			if (playerDamageList == null) {
+				return;
+			}
 
 			if ((NPC.boss && WorldConfiguration.MoneyFromBossEnabled) || (!NPC.boss && WorldConfiguration.MoneyFromNPCEnabled)) {
 				foreach (PlayerDamage damage in playerDamageList) {
@@ -180,141 +184,168 @@ namespace Wolfje.Plugins.SEconomy {
 					Parent.TransactionCache.AddCachedTransaction(fund);
 				}
 			}
-        }
+		}
 
-        #endregion
+		#endregion
 
-        /// <summary>
-        /// Assigns the last player slot to a victim in PVP
-        /// </summary>
-        protected void PlayerHitPlayer(int HitterSlot, int VictimSlot) {
-            lock (__dictionaryLock) {
-                if (PVPDamage.ContainsKey(VictimSlot)) {
-                    PVPDamage[VictimSlot] = HitterSlot;
-                } else {
-                    PVPDamage.Add(VictimSlot, HitterSlot);
-                }
-            }
-        }
+		/// <summary>
+		/// Assigns the last player slot to a victim in PVP
+		/// </summary>
+		protected void PlayerHitPlayer(int HitterSlot, int VictimSlot)
+		{
+			lock (__dictionaryLock) {
+				if (PVPDamage.ContainsKey(VictimSlot)) {
+					PVPDamage[VictimSlot] = HitterSlot;
+				} else {
+					PVPDamage.Add(VictimSlot, HitterSlot);
+				}
+			}
+		}
 
-        /// <summary>
-        /// Runs when a player dies, and hands out penalties if enabled, and rewards for PVP
-        /// </summary>
-        protected void ProcessDeath(int DeadPlayerSlot, bool PVPDeath) {
-            TShockAPI.TSPlayer deadPlayer = TShockAPI.TShock.Players[DeadPlayerSlot];
-            int lastHitterSlot = -1;
+		protected Money GetDeathPenalty(Economy.EconomyPlayer ePlayer)
+		{
+			Money penalty = 0L;
+			StaticPenaltyOverride rewardOverride;
 
-            //get the last hitter ID out of the dictionary
+			if (WorldConfiguration.StaticDeathPenalty == false) {
+				//The penalty defaults to a percentage of the players' current balance.
+				return (long)Math.Round(Convert.ToDouble(ePlayer.BankAccount.Balance.Value) 
+					* (Convert.ToDouble(WorldConfiguration.DeathPenaltyPercentValue) 
+					* Math.Pow(10, -2)));
+			}
 
-            lock (__dictionaryLock) {
-                if (PVPDamage.ContainsKey(DeadPlayerSlot)) {
-                    lastHitterSlot = PVPDamage[DeadPlayerSlot];
+			penalty = WorldConfiguration.StaticPenaltyAmount;
+			if ((rewardOverride = WorldConfiguration.StaticPenaltyOverrides.FirstOrDefault(i => i.TShockGroup == ePlayer.TSPlayer.Group.Name)) != null) {
+				penalty = rewardOverride.StaticRewardOverride;
+			}
 
-                    PVPDamage.Remove(DeadPlayerSlot);
-                }
-            }
+			return penalty;
+		}
 
-            if (deadPlayer != null && !deadPlayer.Group.HasPermission("seconomy.world.bypassdeathpenalty")) {
-				Economy.EconomyPlayer eDeadPlayer = Parent.GetEconomyPlayerSafe(DeadPlayerSlot);
+		/// <summary>
+		/// Runs when a player dies, and hands out penalties if enabled, and rewards for PVP
+		/// </summary>
+		protected void ProcessDeath(int DeadPlayerSlot, bool PVPDeath)
+		{
+			TShockAPI.TSPlayer deadPlayer = null;
+			Journal.CachedTransaction worldToPlayerTx = null;
+			Journal.CachedTransaction playerToWorldTx = null;
+			Economy.EconomyPlayer eKiller = null;
+			Economy.EconomyPlayer eDeadPlayer = null;
+			Money penalty = default(Money);
+			int lastHitterSlot = default(int);
 
-                if (eDeadPlayer != null && eDeadPlayer.BankAccount != null) {
-                    Journal.CachedTransaction playerToWorldTx = new Journal.CachedTransaction() {
-						DestinationBankAccountK = Parent.WorldAccount.BankAccountK
-					};
+			//get the last hitter ID out of the dictionary
+			lock (__dictionaryLock) {
+				if (PVPDamage.ContainsKey(DeadPlayerSlot)) {
+					lastHitterSlot = PVPDamage[DeadPlayerSlot];
 
-                    //The penalty defaults to a percentage of the players' current balance.
-                    Money penalty = (long)Math.Round(Convert.ToDouble(eDeadPlayer.BankAccount.Balance.Value) * (Convert.ToDouble(WorldConfiguration.DeathPenaltyPercentValue) * Math.Pow(10, -2)));
+					PVPDamage.Remove(DeadPlayerSlot);
+				}
+			}
 
-                    if (penalty > 0) {
-                        playerToWorldTx.SourceBankAccountK = eDeadPlayer.BankAccount.BankAccountK;
-                        playerToWorldTx.Message = "dying";
-                        playerToWorldTx.Options = Journal.BankAccountTransferOptions.MoneyTakenOnDeath | Journal.BankAccountTransferOptions.AnnounceToSender;
-                        playerToWorldTx.Amount = penalty;
+			if ((deadPlayer = TShockAPI.TShock.Players.ElementAtOrDefault(DeadPlayerSlot)) == null
+				|| deadPlayer.Group.HasPermission("seconomy.world.bypassdeathpenalty") == true
+				|| (eDeadPlayer = Parent.GetEconomyPlayerSafe(DeadPlayerSlot)) == null
+				|| eDeadPlayer.BankAccount == null
+				|| (penalty = GetDeathPenalty(eDeadPlayer)) == 0) {
+				return;
+			}
 
-                        //the dead player loses money unconditionally
-                        Parent.TransactionCache.AddCachedTransaction(playerToWorldTx);
+			playerToWorldTx = new Journal.CachedTransaction() {
+				DestinationBankAccountK = Parent.WorldAccount.BankAccountK,
+				SourceBankAccountK = eDeadPlayer.BankAccount.BankAccountK,
+				Message = "dying",
+				Options = Journal.BankAccountTransferOptions.MoneyTakenOnDeath | Journal.BankAccountTransferOptions.AnnounceToSender,
+				Amount = penalty
+			};
 
-                        //but if it's a PVP death, the killer gets the losers penalty if enabled
-                        if (PVPDeath && WorldConfiguration.MoneyFromPVPEnabled && WorldConfiguration.KillerTakesDeathPenalty) {
-                            Economy.EconomyPlayer eKiller = Parent.GetEconomyPlayerSafe(lastHitterSlot);
+			//the dead player loses money unconditionally
+			Parent.TransactionCache.AddCachedTransaction(playerToWorldTx);
 
-                            if (eKiller != null && eKiller.BankAccount != null) {
-								Journal.CachedTransaction worldToPlayerTx = new Journal.CachedTransaction() {
-									SourceBankAccountK = Parent.WorldAccount.BankAccountK
-								};
+			//but if it's a PVP death, the killer gets the losers penalty if enabled
+			if (PVPDeath && WorldConfiguration.MoneyFromPVPEnabled && WorldConfiguration.KillerTakesDeathPenalty) {
+				if ((eKiller = Parent.GetEconomyPlayerSafe(lastHitterSlot)) == null
+					|| eKiller.BankAccount == null) {
+					return;
+				}
+				
+				worldToPlayerTx = new Journal.CachedTransaction() {
+					SourceBankAccountK = Parent.WorldAccount.BankAccountK,
+					DestinationBankAccountK = eKiller.BankAccount.BankAccountK,
+					Amount = penalty,
+					Message = "killing " + eDeadPlayer.TSPlayer.Name,
+					Options = Journal.BankAccountTransferOptions.AnnounceToReceiver,
+				};
 
-                                worldToPlayerTx.DestinationBankAccountK = eKiller.BankAccount.BankAccountK;
-                                worldToPlayerTx.Amount = penalty;
-                                worldToPlayerTx.Message = "killing " + eDeadPlayer.TSPlayer.Name;
-                                worldToPlayerTx.Options = Journal.BankAccountTransferOptions.AnnounceToReceiver;
+				Parent.TransactionCache.AddCachedTransaction(worldToPlayerTx);
+			}
+		}
 
-                                Parent.TransactionCache.AddCachedTransaction(worldToPlayerTx);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+		/// <summary>
+		/// Occurs when the server has received a message from the client.
+		/// </summary>
+		protected void NetHooks_GetData(GetDataEventArgs args)
+		{
+			byte[] bufferSegment = null;
+			Terraria.Player player = null;
 
-        /// <summary>
-        /// Occurs when the server has received a message from the client.
-        /// </summary>
-        protected void NetHooks_GetData(GetDataEventArgs args) {
-            byte[] bufferSegment = null;
-            Terraria.Player player = null;
+			if ((player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
+				return;
+			}
 
-            if ((player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
-                return;
-            }
+			bufferSegment = new byte[args.Length];
+			System.Array.Copy(args.Msg.readBuffer, args.Index, bufferSegment, 0, args.Length);
 
-            bufferSegment = new byte[args.Length];
-            System.Array.Copy(args.Msg.readBuffer, args.Index, bufferSegment, 0, args.Length);
+			lock (__packetHandlerMutex) {
+				if (args.MsgID == PacketTypes.NpcStrike) {
+					Terraria.NPC npc = null;
+					Packets.DamageNPC dmgPacket = Packets.PacketMarshal.MarshalFromBuffer<Packets.DamageNPC>(bufferSegment);
 
-            lock (__packetHandlerMutex) {
-                if (args.MsgID == PacketTypes.NpcStrike) {
-                    Terraria.NPC npc = null;
-                    Packets.DamageNPC dmgPacket = Packets.PacketMarshal.MarshalFromBuffer<Packets.DamageNPC>(bufferSegment);
+					if (dmgPacket.NPCID < 0 || dmgPacket.NPCID > Terraria.Main.npc.Length
+						|| args.Msg.whoAmI < 0 || dmgPacket.NPCID > Terraria.Main.player.Length) {
+						return;
+					}
 
-                    if (dmgPacket.NPCID < 0 || dmgPacket.NPCID > Terraria.Main.npc.Length
-                        || args.Msg.whoAmI < 0 || dmgPacket.NPCID > Terraria.Main.player.Length) {
-                        return;
-                    }
+					if ((npc = Terraria.Main.npc.ElementAtOrDefault(dmgPacket.NPCID)) == null) {
+						return;
+					}
 
-                    if ((npc = Terraria.Main.npc.ElementAtOrDefault(dmgPacket.NPCID)) == null) {
-                        return;
-                    }
+					AddNPCDamage(npc, player, dmgPacket.Damage, Convert.ToBoolean(dmgPacket.CrititcalHit));
+				}
+			}
+		}
 
-                    AddNPCDamage(npc, player, dmgPacket.Damage, Convert.ToBoolean(dmgPacket.CrititcalHit));
-                }
-            }
-        }
+		/// <summary>
+		/// Occurs when the server has a chunk of data to send
+		/// </summary>
+		protected void NetHooks_SendData(SendDataEventArgs e)
+		{
+			try {
+				if (e.MsgId == PacketTypes.PlayerDamage) {
+					//occurs when a player hits another player.  ignoreClient is the player that hit, e.number is the 
+					//player that got hit, and e.number4 is a flag indicating PvP damage
 
-        /// <summary>
-        /// Occurs when the server has a chunk of data to send
-        /// </summary>
-        protected void NetHooks_SendData(SendDataEventArgs e) {
-            if (e.MsgId == PacketTypes.PlayerDamage) {
-                //occurs when a player hits another player.  ignoreClient is the player that hit, e.number is the 
-                //player that got hit, and e.number4 is a flag indicating PvP damage
+					if (Convert.ToBoolean(e.number4) && Terraria.Main.player[e.number] != null) {
+						PlayerHitPlayer(e.ignoreClient, e.number);
+					}
+				} else if (e.MsgId == PacketTypes.PlayerKillMe) {
+					//Occrs when the player dies.
+					ProcessDeath(e.number, Convert.ToBoolean(e.number4));
+				}
+			} catch {
 
-                if (Convert.ToBoolean(e.number4) && Terraria.Main.player[e.number] != null) {
-                    PlayerHitPlayer(e.ignoreClient, e.number);
-                }
-            } else if (e.MsgId == PacketTypes.PlayerKillMe) {
-                //Occrs when the player dies.
-                ProcessDeath(e.number, Convert.ToBoolean(e.number4));
-            }
-        }
-
+			}
+		} 
 	}
 
-    /// <summary>
-    /// Damage structure, wraps a player slot and the amount of damage they have done.
-    /// </summary>
-    class PlayerDamage {
-        public Terraria.Player Player;
-        public double Damage;
-    }
+	/// <summary>
+	/// Damage structure, wraps a player slot and the amount of damage they have done.
+	/// </summary>
+	class PlayerDamage {
+		public Terraria.Player Player;
+		public double Damage;
+	}
 
 }
 
