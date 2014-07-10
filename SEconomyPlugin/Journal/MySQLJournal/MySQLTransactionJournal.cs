@@ -323,7 +323,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			if (SEconomyInstance.Configuration.EnableProfiler == true) {
 				sw.Start();
 			}
-			if (ToAccount == null && TransferMaySucceed(FromAccount, ToAccount, Amount, Options) == false) {
+			if (ToAccount == null || TransferMaySucceed(FromAccount, ToAccount, Amount, Options) == false) {
 				return args;
 			}
 
