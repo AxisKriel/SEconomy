@@ -256,7 +256,7 @@ namespace Wolfje.Plugins.SEconomy {
 				DestinationBankAccountK = Parent.WorldAccount.BankAccountK,
 				SourceBankAccountK = eDeadPlayer.BankAccount.BankAccountK,
 				Message = "dying",
-				Options = Journal.BankAccountTransferOptions.MoneyTakenOnDeath | Journal.BankAccountTransferOptions.AnnounceToSender,
+				Options = Journal.BankAccountTransferOptions.MoneyTakenOnDeath | Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.PvP,
 				Amount = penalty
 			};
 
@@ -275,7 +275,7 @@ namespace Wolfje.Plugins.SEconomy {
 					DestinationBankAccountK = eKiller.BankAccount.BankAccountK,
 					Amount = penalty,
 					Message = "killing " + eDeadPlayer.TSPlayer.Name,
-					Options = Journal.BankAccountTransferOptions.AnnounceToReceiver,
+					Options = Journal.BankAccountTransferOptions.AnnounceToReceiver | Journal.BankAccountTransferOptions.PvP,
 				};
 
 				Parent.TransactionCache.AddCachedTransaction(worldToPlayerTx);

@@ -42,7 +42,7 @@ namespace Wolfje.Plugins.SEconomy {
 			}
 
 			//Player died from PvP
-			if ((e.TransferOptions & Journal.BankAccountTransferOptions.MoneyFromPvP) == Journal.BankAccountTransferOptions.MoneyFromPvP) {
+			if ((e.TransferOptions & Journal.BankAccountTransferOptions.PvP) == Journal.BankAccountTransferOptions.PvP) {
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver) {
 					e.ReceiverAccount.Owner.TSPlayer.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(14, "You killed {0} and gained {1}."), 
 						e.SenderAccount.Owner.TSPlayer.Name, e.Amount.ToLongString()), Color.Orange);

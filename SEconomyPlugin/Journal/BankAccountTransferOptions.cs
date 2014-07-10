@@ -26,10 +26,11 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         /// Overrides the normal deficit logic, and will allow a normal player account to go into 
         /// </summary>
         AllowDeficitOnNormalAccount = 1 << 2,
+
         /// <summary>
         /// Indicates that the transfer happened because of PvP.
         /// </summary>
-        MoneyFromPvP = 1 << 3,
+        PvP = 1 << 3,
 
         /// <summary>
         /// Indicates that the money was taken from the player because they died.
