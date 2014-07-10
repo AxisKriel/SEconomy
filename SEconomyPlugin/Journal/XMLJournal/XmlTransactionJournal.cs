@@ -365,6 +365,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 				Label = "Verify"
 			};
 
+			ConsoleEx.WriteLineColour(ConsoleColor.Cyan, " Using XML journal - {0}", path);
+
 			try {
 				byte[] fileData = new byte[0];
 			initPoint:

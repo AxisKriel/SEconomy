@@ -39,6 +39,38 @@ namespace Wolfje.Plugins.SEconomy {
 			}
 		}
 
+		public static void WriteColour(ConsoleColor colour, string MessageFormat, params object[] args)
+		{
+			lock (__consoleWriteLock) {
+				string s = string.Format(MessageFormat, args);
+
+				try {
+					ConsoleColor origColour = Console.ForegroundColor;
+					Console.ForegroundColor = colour;
+					Console.Write(s);
+					Console.ForegroundColor = origColour;
+				} catch {
+					Console.Write(s);
+				}
+			}
+		}
+
+		public static void WriteLineColour(ConsoleColor colour, string MessageFormat, params object[] args)
+		{
+			lock (__consoleWriteLock) {
+				string s = string.Format(MessageFormat, args);
+
+				try {
+					ConsoleColor origColour = Console.ForegroundColor;
+					Console.ForegroundColor = colour;
+					Console.WriteLine(s);
+					Console.ForegroundColor = origColour;
+				} catch {
+					Console.WriteLine(s);
+				}
+			}
+		}
+
 		public static void WriteAtEnd(int Padding, ConsoleColor Colour, string MessageFormat, params object[] args)
 		{
 			lock (__consoleWriteLock) {

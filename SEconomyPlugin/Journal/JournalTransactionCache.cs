@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Wolfje.Plugins.SEconomy.Journal {
     public class JournalTransactionCache : IDisposable {
@@ -24,8 +25,8 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 		/// <summary>
 		/// Occurs when the cached payments timer needs to commit all the uncommitted transactions
 		/// </summary>
-        protected void UncommittedFundTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
-            ProcessQueue();
+        protected async void UncommittedFundTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e) {
+			await ProcessQueueAsync();
         }
 
 		/// <summary>
@@ -38,7 +39,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 		/// <summary>
 		/// Processes all elements in the queue and transfers them
 		/// </summary>
-        protected void ProcessQueue() {
+        protected async Task ProcessQueueAsync() {
             List<CachedTransaction> aggregatedFunds = new List<CachedTransaction>();
             CachedTransaction fund;
 
@@ -70,7 +71,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
                         messageBuilder.Append("s");
                     }
                     //transfer the money
-                    BankTransferEventArgs transfer = sourceAccount.TransferTo(destAccount, aggregatedFund.Amount, aggregatedFund.Options, messageBuilder.ToString(), messageBuilder.ToString());
+                    BankTransferEventArgs transfer = await sourceAccount.TransferToAsync(destAccount, aggregatedFund.Amount, aggregatedFund.Options, messageBuilder.ToString(), messageBuilder.ToString());
                     if (!transfer.TransferSucceeded) {
                         if (transfer.Exception != null) {
                             TShockAPI.Log.ConsoleError(string.Format("seconomy cache: error source={0} dest={1}: {2}", aggregatedFund.SourceBankAccountK, aggregatedFund.DestinationBankAccountK, transfer.Exception));
@@ -97,7 +98,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
                 /*
                  * Flush remaining items in the queue before releasing resources.
                  */
-                ProcessQueue();
+                ProcessQueueAsync().Wait();
             }
         }
     }

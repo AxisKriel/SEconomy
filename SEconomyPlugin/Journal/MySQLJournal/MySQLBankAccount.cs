@@ -115,6 +115,20 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			await Task.Run(() => SyncBalance());
 		}
 
+		public void SyncBalance(IDbConnection conn)
+		{
+			try {
+				this.Balance = Convert.ToInt64(journal.Connection.QueryScalarExisting<decimal>("SELECT IFNULL(SUM(Amount), 0) FROM `bank_account_transaction` WHERE `bank_account_transaction`.`bank_account_fk` = " + this.BankAccountK + ";"));
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError(" seconomy mysql: SQL error in SyncBalance: " + ex.Message);
+			}
+		}
+
+		public async Task SyncBalanceAsync(IDbConnection conn)
+		{
+			await Task.Run(() => SyncBalance(conn));
+		}
+
 		public void SyncBalance()
 		{
 			try {

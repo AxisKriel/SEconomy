@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Wolfje.Plugins.SEconomy.Extensions {
 	public static class MySqlCommandExtensions {
-		public static MySql.Data.MySqlClient.MySqlParameter AddParameter(this MySql.Data.MySqlClient.MySqlCommand command, string name, object data)
+		public static IDbDataParameter AddParameter(this IDbCommand command, string name, object data)
 		{
 			var parm = command.CreateParameter();
 			parm.ParameterName = name;
@@ -14,5 +15,6 @@ namespace Wolfje.Plugins.SEconomy.Extensions {
 			command.Parameters.Add(parm);
 			return parm;
 		}
+
 	}
 }

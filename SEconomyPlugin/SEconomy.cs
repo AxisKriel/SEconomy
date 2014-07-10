@@ -39,7 +39,6 @@ namespace Wolfje.Plugins.SEconomy {
 				this.EconomyPlayers = new List<Economy.EconomyPlayer>();
             }
             catch (Exception ex) {
-                TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(0, "Initialization of SEconomy failed: ") + ex.ToString());
                 return -1;
             }
 
@@ -79,9 +78,24 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		public async Task BindToWorldAsync()
 		{
+			Economy.EconomyPlayer ePlayer = null;
 			WorldAccount = RunningJournal.GetWorldAccount();
 			await WorldAccount.SyncBalanceAsync();
+
 			TShockAPI.Log.ConsoleInfo(string.Format(SEconomyPlugin.Locale.StringOrDefault(1, "SEconomy: world account: paid {0} to players."), WorldAccount.Balance.ToLongString()));
+
+			foreach (var player in TShockAPI.TShock.Players) {
+				if (player == null) {
+					continue;
+				}
+				if ((ePlayer = GetEconomyPlayerSafe(player.Name)) == null) {
+					ePlayer = new Economy.EconomyPlayer(player.Index);
+					EconomyPlayers.Add(ePlayer);
+				}
+
+				await ePlayer.EnsureBankAccountExistsAsync();
+				await ePlayer.BankAccount.SyncBalanceAsync();
+			}
 
 			PayRunTimer.Start();
 		}

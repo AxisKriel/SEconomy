@@ -90,6 +90,7 @@
     <Compile Include="Journal\IBankAccount.cs" />
     <Compile Include="Journal\ITransaction.cs" />
     <Compile Include="Journal\ITransactionJournal.cs" />
+    <Compile Include="Journal\MySQLJournal\ConcurrentQueue.cs" />
     <Compile Include="Journal\MySQLJournal\MySQLBankAccount.cs" />
     <Compile Include="Journal\MySQLJournal\MySQLTransaction.cs" />
     <Compile Include="Journal\MySQLJournal\MySQLTransactionJournal.cs" />
