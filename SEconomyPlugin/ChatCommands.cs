@@ -24,7 +24,7 @@ namespace Wolfje.Plugins.SEconomy {
 			string namePrefix = "Your";
 
 			if (args.Parameters.Count == 0) {
-				args.Player.SendInfoMessage(SEconomyPlugin.Locale.StringOrDefault(28, "This server is running SEconomy v{0} by Wolfje"), Parent.PluginInstance.Version);
+				args.Player.SendInfoMessage(SEconomyPlugin.Locale.StringOrDefault(28, "This server is running {0} by Wolfje"), Parent.PluginInstance.GetVersionString());
 				args.Player.SendInfoMessage(SEconomyPlugin.Locale.StringOrDefault(29, "Download here: http://plugins.tw.id.au"));
 				args.Player.SendInfoMessage(SEconomyPlugin.Locale.StringOrDefault(230, "You can:"));
 

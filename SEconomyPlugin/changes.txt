@@ -11,11 +11,15 @@ Update 15
 [+] Added website and author information to /bank and /sec
 [+] Localization support
 [+] en-AU language
-[*] localisation viewer program called localeviewer.exe for translators
-[-] Removed old EPRS import code
+[+] MySQL journal support, supports writing of the journal in an SQL database
+[+] Static rewards for PVP kills
+[+] Override support for static rewards for PvP kills based on TShock group
+[+] XML2SQL.exe: migrate your XML journal file to an SQL table
+[+] localeviewer.exe: localisation viewer program called localeviewer.exe for translators
+[-] Removed old EPRS database import code
 [-] Removed old dead profiler code
-[-] Removed static members in SEconomy plugin
-[-] Removed TSPlayer extensions as they are now in public code
+[-] Removed most static members in SEconomy plugin
+[-] Removed TSPlayer extensions as they now feature in TShock itself
 [-] Removed /bank enable|disable because it has forever done nothing and nobody even cares
 [c] Changed most ContinueWith delegates to awaits in .net 4.5
 [c] Rewrote Configuration interface
@@ -24,3 +28,4 @@ Update 15
 [c] Rewrote startup interface to be more streamlined
 [c] Stopped GZipDecompress from going MS -> Byte array and then back to MS again
 [c] Removed all the console fuckery inside SaveJournal
+[c] Cleaned up startup TUI

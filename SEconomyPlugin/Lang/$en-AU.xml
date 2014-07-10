@@ -4,7 +4,7 @@
 	<s>SEconomy: world account: paid {0} to players.</s>
 	<s>blah</s>
 	<!-- SEconomyPlugin.cs: 4-14 -->
-	<s>SEconomy v{0} by Wolfje</s>
+	<s>{0} by Wolfje</s>
 	<s> * http://plugins.tw.id.au</s>
 	<s> * /sec[onomy] reload|rl - Reloads SEconomy</s>
 	<s> * /sec[onomy] stop - Stops and unloads SEconomy</s>
@@ -31,7 +31,7 @@
 	<s>You have {0}.</s>
 	<s>seconomy async: error occurred on a task thread: </s>
 	<!-- ChatCommands.cs: 29-59 -->
-	<s>This server is running SEconomy v{0} by Wolfje</s>
+	<s>This server is running {0} by Wolfje</s>
 	<s>"Download here: http://plugins.tw.id.au"</s>
 	<s>You can:</s>
 	<s>* View your balance with /bank bal</s>

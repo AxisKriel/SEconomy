@@ -29,6 +29,7 @@ namespace Wolfje.Plugins.SEconomy {
 		protected static string genericErrorMessage = @"SEconomy failed to load and is disabled. You can attempt to fix what's stopping it from starting and relaunch it with /sec start.
 
 You do NOT have to restart the server to issue this command.  Just continue as normal, and issue the command when the game starts.";
+
         #region "API Plugin Stub"
         public override string Author {
             get {
@@ -100,6 +101,10 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 #if __PREVIEW
 			Console.ForegroundColor = ConsoleColor.Gray;
 			Console.Write(" Preview");
+
+			if (this.Version.Revision > 0) {
+				Console.Write(" " + this.Version.Revision);
+			}
 #endif
 
 			Console.WriteLine();
@@ -110,16 +115,37 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 			Console.Write("http://plugins.tw.id.au");
 
 			Console.WriteLine("\r\n");
+
+#if __PREVIEW
+			ConsoleEx.WriteLineColour(ConsoleColor.DarkRed, " This is a preview version of SEconomy.");
+			ConsoleEx.WriteLineColour(ConsoleColor.DarkRed, " Things may not work as expected.  Please submit issues at the URL above.");
+			Console.WriteLine();
+#endif
+
 			Console.ForegroundColor = ConsoleColor.Cyan;
 			Console.WriteLine(" Please wait...");
 			Console.WriteLine();
 			Console.ResetColor();
 		}
 
+		public string GetVersionString()
+		{
+			StringBuilder sb = new StringBuilder("SEconomy Update");
+			sb.AppendFormat(" {0}", this.Version.Build);
+#if __PREVIEW
+			sb.Append(" Preview");
+
+			if (this.Version.Revision > 0) {
+				sb.AppendFormat(" {0}", this.Version.Revision);
+			}
+#endif
+			return sb.ToString();
+		}
+
 		protected async void TShock_CommandExecuted(TShockAPI.CommandArgs args)
 		{
 			if (args.Parameters.Count == 0) {
-				args.Player.SendInfoMessage(string.Format(Locale.StringOrDefault(3, "SEconomy v{0} by Wolfje"), this.Version));
+				args.Player.SendInfoMessage(string.Format(Locale.StringOrDefault(3, "{0} by Wolfje"), GetVersionString()));
 				args.Player.SendInfoMessage(" * http://plugins.tw.id.au");
 				args.Player.SendInfoMessage(Locale.StringOrDefault(5, " * /sec[onomy] reload|rl - Reloads SEconomy"));
 				args.Player.SendInfoMessage(Locale.StringOrDefault(6, " * /sec[onomy] stop - Stops and unloads SEconomy"));
@@ -191,7 +217,6 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 							TShockAPI.Log.ConsoleError(genericErrorMessage);
 							throw;
 						}
-						await Instance.BindToWorldAsync();
 					});
 				} catch {
 					args.Player.SendErrorMessage(Locale.StringOrDefault(12, "SEconomy failed to initialize, and will be unavailable for this session."));
