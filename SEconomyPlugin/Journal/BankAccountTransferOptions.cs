@@ -14,14 +14,17 @@ namespace Wolfje.Plugins.SEconomy.Journal {
         /// None, indicates a silent, normal payment.
         /// </summary>
         None = 0,
+
         /// <summary>
         /// Announces the payment to the reciever that they recieved, or gained money
         /// </summary>
         AnnounceToReceiver = 1,
+
         /// <summary>
         /// Announces the payment to the sender that they sent, or paid money
         /// </summary>
         AnnounceToSender = 1 << 1,
+
         /// <summary>
         /// Overrides the normal deficit logic, and will allow a normal player account to go into 
         /// </summary>

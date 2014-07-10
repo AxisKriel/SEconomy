@@ -25,6 +25,7 @@ Update 15
 [c] Rewrote Configuration interface
 [c] WorldEconomy now does not hand out more rewards than a mob's health
 [c] WorldEconomy now takes into account the correct damage algorithm
+[c] WorldEconomy now uses the PvP transaction flag for PvP kills
 [c] Rewrote startup interface to be more streamlined
 [c] Stopped GZipDecompress from going MS -> Byte array and then back to MS again
 [c] Removed all the console fuckery inside SaveJournal
