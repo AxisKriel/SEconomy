@@ -350,6 +350,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				BankTransactionPending(this, pendingTransaction);
 			}
 
+			if (pendingTransaction == null || pendingTransaction.IsCancelled == true) {
+				return args;
+			}
+
 			args.Amount = pendingTransaction.Amount;
 			args.SenderAccount = pendingTransaction.FromAccount;
 			args.ReceiverAccount = pendingTransaction.ToAccount;
@@ -358,17 +362,15 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 			try {
 				sqlTrans = conn.BeginTransaction();
-
-				if ((sourceTran = BeginSourceTransaction(sqlTrans, FromAccount.BankAccountK, Amount, JournalMessage)) == null) {
+				if ((sourceTran = BeginSourceTransaction(sqlTrans, FromAccount.BankAccountK, pendingTransaction.Amount, pendingTransaction.JournalLogMessage)) == null) {
 					throw new Exception("BeginSourceTransaction failed");
 				}
 
-				if ((destTran = FinishEndTransaction(sqlTrans, ToAccount, Amount, JournalMessage)) == null) {
+				if ((destTran = FinishEndTransaction(sqlTrans, ToAccount, pendingTransaction.Amount, pendingTransaction.JournalLogMessage)) == null) {
 					throw new Exception("FinishEndTransaction failed");
 				}
 
 				BindTransactions(sqlTrans, sourceTran.BankAccountTransactionK, destTran.BankAccountTransactionK);
-
 				sqlTrans.Commit();
 			} catch (Exception ex) {
 				sqlTrans.Rollback();
