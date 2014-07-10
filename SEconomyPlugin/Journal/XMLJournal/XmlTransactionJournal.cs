@@ -737,15 +737,16 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 					args.TransferSucceeded = false;
 					args.TransactionMessage = pendingTransaction.TransactionMessage;
 
+
 					if (pendingTransaction.IsCancelled) {
 						return args;
 					}
 
 					//insert the source negative transaction
-					ITransaction sourceTran = BeginSourceTransaction(FromAccount.BankAccountK, Amount, JournalMessage);
+					ITransaction sourceTran = BeginSourceTransaction(FromAccount.BankAccountK, pendingTransaction.Amount, pendingTransaction.JournalLogMessage);
 					if (sourceTran != null) {
 						//insert the destination inverse transaction
-						ITransaction destTran = FinishEndTransaction(sourceTran.BankAccountTransactionK, ToAccount, Amount, JournalMessage);
+						ITransaction destTran = FinishEndTransaction(sourceTran.BankAccountTransactionK, ToAccount, pendingTransaction.Amount, pendingTransaction.JournalLogMessage);
 
 						if (destTran != null) {
 							//perform the double-entry binding
