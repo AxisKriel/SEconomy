@@ -131,6 +131,7 @@
   <ItemGroup>
     <Content Include="changes.txt" />
     <EmbeddedResource Include="Lang\%24en-AU.xml" />
+    <EmbeddedResource Include="Journal\MySQLJournal\DatabaseScripts\create%241.sql" />
     <Content Include="Permissions.txt" />
   </ItemGroup>
   <ItemGroup>

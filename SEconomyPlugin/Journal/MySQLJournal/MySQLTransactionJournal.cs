@@ -11,6 +11,9 @@ using Wolfje.Plugins.SEconomy.Extensions;
 using System.Data;
 using System.Diagnostics;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
+using System.Reflection;
+using System.IO;
 
 namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 	public class MySQLTransactionJournal : ITransactionJournal {
@@ -26,7 +29,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			}
 
 			this.sqlProperties = sqlProperties;
-			this.connectionString = string.Format("server={0};user id={2};database={1};password={3}", sqlProperties.DbHost, sqlProperties.DbName, 
+			this.connectionString = string.Format("server={0};user id={1};password={2};", sqlProperties.DbHost,
 				sqlProperties.DbUsername, sqlProperties.DbPassword);
 			this.SEconomyInstance = instance;
 			this.mysqlConnection = new MySqlConnection(connectionString);
@@ -53,6 +56,14 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		}
 
 		public MySqlConnection Connection
+		{
+			get
+			{
+				return new MySqlConnection(connectionString + "database=" + sqlProperties.DbName);
+			}
+		}
+
+		public MySqlConnection ConnectionNoCatalog
 		{
 			get
 			{
@@ -121,6 +132,56 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			await Task.FromResult<object>(null); //stub
 		}
 
+		/// <summary>
+		/// Queries the destination MySQL server to determine if there 
+		/// is a database by the name matching sqlProperties.DbName set in the
+		/// SEconomy configuration file.
+		/// </summary>
+		/// <returns>True if the database exists, false otherwise.</returns>
+		protected bool DatabaseExists()
+		{
+			long schemaCount = default(long);
+			string query = @"select count(`schema_name`) 
+							from `information_schema`.`schemata`
+							where `schema_name` = @0";
+
+			if ((schemaCount = ConnectionNoCatalog.QueryScalar<long>(query, sqlProperties.DbName)) > 0) {
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Creates a seconomy database in MySQL based on the create database SQL
+		/// embedded resources.
+		/// </summary>
+		protected void CreateDatabase()
+		{
+			Regex createDbRegex = new Regex(@"create\$(\d+)\.sql");
+			Dictionary<int, string> scriptList = new Dictionary<int, string>();
+			Match nameMatch = null;
+			int scriptIndex = default(int);
+
+			foreach (string resourceName in Assembly.GetExecutingAssembly().GetManifestResourceNames()) {
+				if ((nameMatch = createDbRegex.Match(resourceName)).Success == false
+					|| int.TryParse(nameMatch.Groups[1].Value, out scriptIndex) == false) {
+					continue;
+				}
+
+				if (scriptList.ContainsKey(scriptIndex) == false) {
+					using (StreamReader sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))) {
+						scriptList[scriptIndex] = sr.ReadToEnd();
+					}
+				}
+			}
+
+			foreach (string scriptToRun in scriptList.OrderBy(i => i.Key).Select(i=>i.Value)) {
+				string sql = scriptToRun.Replace("$CATALOG", sqlProperties.DbName);
+				ConnectionNoCatalog.Query(sql);
+			}
+		}
+
 		public void LoadJournal()
 		{
 			long bankAccountCount = 0, tranCount = 0;
@@ -137,14 +198,24 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				if (JournalLoadingPercentChanged != null) {
 					JournalLoadingPercentChanged(this, parsingArgs);
 				}
-				
-				//TODO: Create schema
+
+				if (DatabaseExists() == false) {
+					try {
+						CreateDatabase();
+					} catch (Exception ex) {
+						TShockAPI.Log.ConsoleError(" Your SEconomy database does not exist and it couldn't be created.");
+						TShockAPI.Log.ConsoleError(" Check your SQL server is on, and the credentials you supplied have");
+						TShockAPI.Log.ConsoleError(" permissions to CREATE DATABASE.");
+						TShockAPI.Log.ConsoleError(" The error was: {0}", ex.Message);
+						throw;
+					}
+				}
 
 				bankAccounts = new List<IBankAccount>();
-				bankAccountCount = Connection.QueryScalar<long>("SELECT COUNT(*) from `bank_account`;");
-				tranCount = Connection.QueryScalar<long>("SELECT COUNT(*) FROM `bank_account_transaction`;");
+				bankAccountCount = Connection.QueryScalar<long>("select count(*) from `bank_account`;");
+				tranCount = Connection.QueryScalar<long>("select count(*) from `bank_account_transaction`;");
 
-				QueryResult bankAccountResult = Connection.QueryReader("SELECT * FROM `bank_account`;");
+				QueryResult bankAccountResult = Connection.QueryReader("select * from `bank_account`;");
 				Action<int> percentCompleteFunc = i => {
 					percentComplete = (double)i / (double)bankAccountCount * 100;
 
@@ -224,9 +295,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		{
 			MySQLTransaction trans = null;
 			long idenitity = -1;
-			string query = @"INSERT INTO `bank_account_transaction` 
+			string query = @"insert into `bank_account_transaction` 
 								(bank_account_fk, amount, message, flags, flags2, transaction_date_utc)
-							VALUES (@0, @1, @2, @3, @4, @5);";
+							values (@0, @1, @2, @3, @4, @5);";
 			IBankAccount account = null;
 			if ((account = GetBankAccount(BankAccountK)) == null) {
 				return null;
@@ -257,9 +328,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			MySQLTransaction trans = null;
 			IBankAccount account = null;
 			long identity = -1;
-			string query = @"INSERT INTO `bank_account_transaction` 
+			string query = @"insert into `bank_account_transaction` 
 								(bank_account_fk, amount, message, flags, flags2, transaction_date_utc)
-							VALUES (@0, @1, @2, @3, @4, @5);";
+							values (@0, @1, @2, @3, @4, @5);";
 			if ((account = GetBankAccount(ToAccount.BankAccountK)) == null) {
 				return null;
 			}
@@ -287,9 +358,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		public void BindTransactions(MySqlTransaction SQLTransaction, long SourceBankTransactionK, long DestBankTransactionK)
 		{
 			int updated = -1;
-			string query = @"UPDATE `bank_account_transaction` 
-							 SET `bank_account_transaction_fk` = @0
-							 WHERE `bank_account_transaction_id` = @1";
+			string query = @"update `bank_account_transaction` 
+							 set `bank_account_transaction_fk` = @0
+							 where `bank_account_transaction_id` = @1";
 
 			try {
 				if ((updated = SQLTransaction.Connection.QueryTransaction(SQLTransaction, query, SourceBankTransactionK, DestBankTransactionK)) != 1) {
@@ -315,9 +386,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			BankTransferEventArgs args = new BankTransferEventArgs() {
 				TransferSucceeded = false
 			};
-			string accountVerifyQuery = @"SELECT COUNT(*)
-										  FROM `bank_account`
-										  WHERE	`bank_account_id` = @0;";
+			string accountVerifyQuery = @"select count(*)
+										  from `bank_account`
+										  where	`bank_account_id` = @0;";
 
 			Stopwatch sw = new Stopwatch();
 			if (SEconomyInstance.Configuration.EnableProfiler == true) {
@@ -334,13 +405,13 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 			conn.Open();
 
-			if ( (accountCount = Connection.QueryScalar<long>(accountVerifyQuery, FromAccount.BankAccountK)) != 1) {
+			if ((accountCount = Connection.QueryScalar<long>(accountVerifyQuery, FromAccount.BankAccountK)) != 1) {
 				TShockAPI.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
 				conn.Dispose();
 				return args;
 			}
 
-			if ( (accountCount = Connection.QueryScalar<long>(accountVerifyQuery, ToAccount.BankAccountK)) != 1) {
+			if ((accountCount = Connection.QueryScalar<long>(accountVerifyQuery, ToAccount.BankAccountK)) != 1) {
 				TShockAPI.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
 				conn.Dispose();
 				return args;

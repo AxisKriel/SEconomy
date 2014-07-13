@@ -46,7 +46,7 @@ namespace xml2sql {
 
 			sec.Configuration = Config.FromFile(Config.BaseDirectory + Path.DirectorySeparatorChar + "seconomy.config.json");
 			journal = new XmlTransactionJournal(sec, Config.BaseDirectory + Path.DirectorySeparatorChar + "SEconomy.journal.xml.gz");
-			connectionString = string.Format("server={0};user id={2};database={1};password={3}",
+			connectionString = string.Format("server={0};user id={2};database={1};password={3};command timeout=0;",
 				sec.Configuration.SQLConnectionProperties.DbHost, sec.Configuration.SQLConnectionProperties.DbName, sec.Configuration.SQLConnectionProperties.DbUsername, sec.Configuration.SQLConnectionProperties.DbPassword);
 			JournalLoadingPercentChanged += journal_JournalLoadingPercentChanged;
 			journal.JournalLoadingPercentChanged += journal_JournalLoadingPercentChanged;
@@ -117,8 +117,12 @@ namespace xml2sql {
 
 					try {
 						sqlConnection.QueryIdentity(txQuery, out tranId, id, (long)transaction.Amount, transaction.Message,
-							(int)BankAccountTransactionFlags.FundsAvailable, (int)transaction.Flags2, DateTime.UtcNow, 
+							(int)BankAccountTransactionFlags.FundsAvailable, (int)transaction.Flags2, transaction.TransactionDateUtc, 
 							transaction.BankAccountTransactionK);
+
+						if (oldNewTransactions.ContainsKey(transaction.BankAccountTransactionK) == false) {
+							oldNewTransactions[transaction.BankAccountTransactionK] = tranId;
+						}
 					} catch (Exception ex) {
 						TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in BeginSourceTransaction: " + ex.Message);
 						continue;
@@ -132,6 +136,25 @@ namespace xml2sql {
 					}
 					oldPercent = (int)percentComplete;
 				}
+			}
+
+			args.Label = "Reseed";
+			args.Percent = 0;
+			if (JournalLoadingPercentChanged != null) {
+				JournalLoadingPercentChanged(null, args);
+			}
+
+			string updateQuery = @"update bank_account_transaction as OLDT
+									inner join (
+										select bank_account_transaction_id, old_bank_account_transaction_k
+										from bank_account_transaction
+									) as NEWT on OLDT.old_bank_account_transaction_k = NEWT.old_bank_account_transaction_k
+									set OLDT.bank_account_transaction_fk = NEWT.bank_account_transaction_id";
+
+			sqlConnection.Query(updateQuery);
+			args.Percent = 100;
+			if (JournalLoadingPercentChanged != null) {
+				JournalLoadingPercentChanged(null, args);
 			}
 
 			Console.WriteLine("import complete", skipped);
