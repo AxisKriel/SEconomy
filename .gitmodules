@@ -1,3 +1,6 @@
 [submodule "References/TShock"]
 	path = References/TShock
 	url = https://github.com/NyxStudios/TShock
+[submodule "References/Jist"]
+	path = References/Jist
+	url = https://github.com/tylerjwatson/Jist.git
