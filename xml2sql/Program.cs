@@ -14,10 +14,13 @@ using Wolfje.Plugins.SEconomy.Journal;
 using Wolfje.Plugins.SEconomy.Configuration;
 using Wolfje.Plugins.SEconomy.Extensions;
 using Wolfje.Plugins.SEconomy.Journal.XMLJournal;
+using System.Text.RegularExpressions;
 
 namespace xml2sql {
 	public class Program {
 		public static event EventHandler<JournalLoadingPercentChangedEventArgs> JournalLoadingPercentChanged;
+		protected string connectionString = "server={0};user id={1};password={2};command timeout=0;";
+		protected SEconomy sec;
 
 		static void Main(string[] args)
 		{
@@ -28,33 +31,109 @@ namespace xml2sql {
 			Console.WriteLine(" For use with SEconomy Update 15 or newer");
 			Console.WriteLine();
 
-			Process();
+			new Program().Process();
 		}
 
-		static void Process()
+		protected MySql.Data.MySqlClient.MySqlConnection Connection { 
+			get {
+				return new MySqlConnection(string.Format(connectionString, sec.Configuration.SQLConnectionProperties.DbHost,
+					sec.Configuration.SQLConnectionProperties.DbUsername, sec.Configuration.SQLConnectionProperties.DbPassword)
+					+ ";database=" + sec.Configuration.SQLConnectionProperties.DbName);
+			}
+		}
+
+		protected MySql.Data.MySqlClient.MySqlConnection ConnectionNoCatalog { 
+			get {
+				return new MySqlConnection(string.Format(connectionString, sec.Configuration.SQLConnectionProperties.DbHost,
+					sec.Configuration.SQLConnectionProperties.DbUsername, sec.Configuration.SQLConnectionProperties.DbPassword));
+			}
+		}
+
+
+		/// <summary>
+		/// Queries the destination MySQL server to determine if there 
+		/// is a database by the name matching sqlProperties.DbName set in the
+		/// SEconomy configuration file.
+		/// </summary>
+		/// <returns>True if the database exists, false otherwise.</returns>
+		protected bool DatabaseExists()
 		{
-			SEconomy sec = new SEconomy(null);
+			long schemaCount = default(long);
+			string query = @"select count(`schema_name`) 
+							from `information_schema`.`schemata`
+							where `schema_name` = @0";
+
+			if ((schemaCount = ConnectionNoCatalog.QueryScalar<long>(query, sec.Configuration.SQLConnectionProperties.DbName)) > 0) {
+				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Creates a seconomy database in MySQL based on the create database SQL
+		/// embedded resources.
+		/// </summary>
+		protected void CreateDatabase()
+		{
+			Assembly asm;
+			Regex createDbRegex = new Regex(@"create\$(\d+)\.sql");
+			Dictionary<int, string> scriptList = new Dictionary<int, string>();
+			Match nameMatch = null;
+			int scriptIndex = default(int);
+
+			if ((asm = Assembly.GetAssembly(typeof(SEconomyPlugin))) == null) {
+				return;
+			}
+
+			foreach (string resourceName in asm.GetManifestResourceNames()) {
+				if ((nameMatch = createDbRegex.Match(resourceName)).Success == false
+					|| int.TryParse(nameMatch.Groups[1].Value, out scriptIndex) == false) {
+					continue;
+				}
+
+				if (scriptList.ContainsKey(scriptIndex) == false) {
+					using (StreamReader sr = new StreamReader(asm.GetManifestResourceStream(resourceName))) {
+						scriptList[scriptIndex] = sr.ReadToEnd();
+					}
+				}
+			}
+
+			foreach (string scriptToRun in scriptList.OrderBy(i => i.Key).Select(i => i.Value)) {
+				string sql = scriptToRun.Replace("$CATALOG", sec.Configuration.SQLConnectionProperties.DbName);
+				ConnectionNoCatalog.Query(sql);
+			}
+		}
+
+		protected void Process()
+		{
+			sec = new SEconomy(null);
 			SEconomyPlugin.Instance = sec;
 			XmlTransactionJournal journal = null;
 			string connectionString = null;
 			int oldPercent = 0, skipped = 0;
 			Dictionary<long, long> oldNewTransactions = new Dictionary<long, long>();
-			MySqlConnection sqlConnection = null;
 			JournalLoadingPercentChangedEventArgs args = new JournalLoadingPercentChangedEventArgs() {
 				Label = "Accounts"
 			};
 
 			sec.Configuration = Config.FromFile(Config.BaseDirectory + Path.DirectorySeparatorChar + "seconomy.config.json");
 			journal = new XmlTransactionJournal(sec, Config.BaseDirectory + Path.DirectorySeparatorChar + "SEconomy.journal.xml.gz");
-			connectionString = string.Format("server={0};user id={2};database={1};password={3};command timeout=0;",
-				sec.Configuration.SQLConnectionProperties.DbHost, sec.Configuration.SQLConnectionProperties.DbName, sec.Configuration.SQLConnectionProperties.DbUsername, sec.Configuration.SQLConnectionProperties.DbPassword);
+			
 			JournalLoadingPercentChanged += journal_JournalLoadingPercentChanged;
 			journal.JournalLoadingPercentChanged += journal_JournalLoadingPercentChanged;
 			journal.LoadJournal();
 
 			Console.WriteLine();
 
-			sqlConnection = new MySqlConnection(connectionString);
+			if (DatabaseExists() == false) {
+				Console.WriteLine("Your SEconomy database does not exist.  Create it?");
+				Console.Write("[y/n] ");
+				if (Console.ReadKey().KeyChar != 'y') {
+					return;
+				}
+				CreateDatabase();
+			}
 
 			Console.WriteLine("Your SEconomy database will be flushed.  All accounts, and transactions will be deleted before the import.");
 			Console.Write("Continue? [y/n] ");
@@ -65,10 +144,10 @@ namespace xml2sql {
 
 			Console.WriteLine();
 
-			sqlConnection.Query(string.Format("DELETE FROM `{0}`.`bank_account`;", sec.Configuration.SQLConnectionProperties.DbName));
-			sqlConnection.Query(string.Format("ALTER TABLE `{0}`.`bank_account` AUTO_INCREMENT 0;", sec.Configuration.SQLConnectionProperties.DbName));
-			sqlConnection.Query(string.Format("DELETE FROM `{0}`.`bank_account_transaction`;", sec.Configuration.SQLConnectionProperties.DbName));
-			sqlConnection.Query(string.Format("ALTER TABLE `{0}`.`bank_account_transaction` AUTO_INCREMENT 0;", sec.Configuration.SQLConnectionProperties.DbName));
+			Connection.Query(string.Format("DELETE FROM `{0}`.`bank_account`;", sec.Configuration.SQLConnectionProperties.DbName));
+			Connection.Query(string.Format("ALTER TABLE `{0}`.`bank_account` AUTO_INCREMENT 0;", sec.Configuration.SQLConnectionProperties.DbName));
+			Connection.Query(string.Format("DELETE FROM `{0}`.`bank_account_transaction`;", sec.Configuration.SQLConnectionProperties.DbName));
+			Connection.Query(string.Format("ALTER TABLE `{0}`.`bank_account_transaction` AUTO_INCREMENT 0;", sec.Configuration.SQLConnectionProperties.DbName));
 
 			Console.WriteLine("This will probably take a while...\r\n");
 			Console.WriteLine();
@@ -76,32 +155,22 @@ namespace xml2sql {
 				JournalLoadingPercentChanged(null, args);
 			}
 
-			//using (Context ctx = new Context(connectionString)) {
-			//	if (ctx.DatabaseExists() == false) {
-			//		Console.WriteLine("Your SEconomy database does not exist.  Create it?");
-			//		Console.Write("[y/n] ");
-			//		if (Console.ReadKey().KeyChar != 'y') {
-			//			return;
-			//		}
-
-			//		ctx.CreateDatabase();
-			//	}
-
 			for (int i = 0; i < journal.BankAccounts.Count; i++) {
 				IBankAccount account = journal.BankAccounts.ElementAtOrDefault(i);
 				double percentComplete = (double)i / (double)journal.BankAccounts.Count * 100;
 				long id = -1;
+				string query = null;
 
 				if (account == null) {
 					continue;
 				}
 
-				string query = @"INSERT INTO `bank_account` 
-									(user_account_name, world_id, flags, flags2, description, old_bank_account_k)
-								  VALUES (@0, @1, @2, @3, @4, @5);";
+				query = @"INSERT INTO `bank_account` 
+							(user_account_name, world_id, flags, flags2, description, old_bank_account_k)
+						  VALUES (@0, @1, @2, @3, @4, @5);";
 
 				try {
-					sqlConnection.QueryIdentity(query, out id, account.UserAccountName, account.WorldID,
+					Connection.QueryIdentity(query, out id, account.UserAccountName, account.WorldID,
 						(int)account.Flags, 0, account.Description, account.BankAccountK);
 				} catch (Exception ex) {
 					TShockAPI.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
@@ -116,7 +185,7 @@ namespace xml2sql {
 										VALUES (@0, @1, @2, @3, @4, @5, @6);";
 
 					try {
-						sqlConnection.QueryIdentity(txQuery, out tranId, id, (long)transaction.Amount, transaction.Message,
+						Connection.QueryIdentity(txQuery, out tranId, id, (long)transaction.Amount, transaction.Message,
 							(int)BankAccountTransactionFlags.FundsAvailable, (int)transaction.Flags2, transaction.TransactionDateUtc, 
 							transaction.BankAccountTransactionK);
 
@@ -151,7 +220,8 @@ namespace xml2sql {
 									) as NEWT on OLDT.old_bank_account_transaction_k = NEWT.old_bank_account_transaction_k
 									set OLDT.bank_account_transaction_fk = NEWT.bank_account_transaction_id";
 
-			sqlConnection.Query(updateQuery);
+			Connection.Query(updateQuery);
+			Connection.Query("update `bank_account_transaction` set `old_bank_account_transaction_k` = null;");
 			args.Percent = 100;
 			if (JournalLoadingPercentChanged != null) {
 				JournalLoadingPercentChanged(null, args);

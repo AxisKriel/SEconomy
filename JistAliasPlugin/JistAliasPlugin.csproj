@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JistAlias.cs" />
     <Compile Include="JistAliasPlugin.cs" />
     <Compile Include="JScriptAliasCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

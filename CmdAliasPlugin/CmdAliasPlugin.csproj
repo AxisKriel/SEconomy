@@ -48,8 +48,10 @@
   <ItemGroup>
     <Compile Include="AliasCommand.cs" />
     <Compile Include="AliasExecutedEventArgs.cs" />
+    <Compile Include="CmdAlias.cs" />
     <Compile Include="CmdAliasPlugin.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="Extensions\TSPlayer.Extensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -67,6 +69,9 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /y /i "$(TargetPath)" "$(SolutionDir)..\ServerInstance4.2\ServerPlugins"</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
