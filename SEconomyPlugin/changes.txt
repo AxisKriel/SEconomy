@@ -16,6 +16,8 @@ Update 15
 [+] Override support for static rewards for PvP kills based on TShock group
 [+] XML2SQL.exe: migrate your XML journal file to an SQL table
 [+] localeviewer.exe: localisation viewer program called localeviewer.exe for translators
+[+] JS function: acmd_cooldown_reset(player, alias): resets the cooldown in a script
+[+] JS function: acmd_cooldown_set(player, alias, secs): overrides the cooldown in a script
 [-] Removed old EPRS database import code
 [-] Removed old dead profiler code
 [-] Removed most static members in SEconomy plugin
@@ -30,3 +32,6 @@ Update 15
 [c] Stopped GZipDecompress from going MS -> Byte array and then back to MS again
 [c] Removed all the console fuckery inside SaveJournal
 [c] Cleaned up startup TUI
+[c] AliasCmd/JistAlias: more resilient to command failures
+[c] AliasCmd's cooldown ability now goes by TShock username and not character name
+[c] Cooldown mechanism is now based on when users can next run the command

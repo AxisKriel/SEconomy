@@ -460,6 +460,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 								}
 							}
 
+                            account.SyncBalance();
+
 							if (oldPercent != (int)percentComplete) {
 								parsingArgs.Percent = (int)percentComplete;
 								if (JournalLoadingPercentChanged != null) {
