@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Wolfje.Plugins.SEconomy.Journal {
     public interface IBankAccount {
 
-        ITransactionJournal OwningJournal {  get;}
+        ITransactionJournal OwningJournal {  get; }
 
         long BankAccountK { get; set; }
         string OldBankAccountK { get; set; }
@@ -18,7 +18,6 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
         Money Balance { get; set; }
 
-        Economy.EconomyPlayer Owner { get; }
         bool IsAccountEnabled { get; }
         bool IsSystemAccount { get; }
         bool IsLockedToWorld { get; }

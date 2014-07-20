@@ -55,11 +55,11 @@ namespace Wolfje.Plugins.SEconomy.SEconomyScriptPlugin {
                 Journal.BankAccountTransferOptions.AnnounceToSender, 
                 TxMessage, TxMessage);
            
-            Jist.JistPlugin.Instance.CallFunction(completedCallback, result);
+            Jist.JistPlugin.Instance.CallFunction(completedCallback, null, result);
         }
 
         [JavascriptFunction("seconomy_pay_async")]
-        public async void SEconomyPayAsync(Journal.IBankAccount From, Journal.IBankAccount To, Money Amount, string TxMessage, JsValue completedCallback)
+        public void SEconomyPayAsync(Journal.IBankAccount From, Journal.IBankAccount To, Money Amount, string TxMessage, JsValue completedCallback)
         {
             BankTransferEventArgs result = null;
             if (JistPlugin.Instance == null
@@ -67,13 +67,13 @@ namespace Wolfje.Plugins.SEconomy.SEconomyScriptPlugin {
                 return;
             }
             
-            result = await From.TransferToAsync(To, Amount,
+            result = From.TransferTo(To, Amount,
                 Journal.BankAccountTransferOptions.AnnounceToReceiver 
                     | Journal.BankAccountTransferOptions.AnnounceToSender 
                     | Journal.BankAccountTransferOptions.IsPayment,
                 TxMessage, TxMessage);
 
-            Jist.JistPlugin.Instance.CallFunction(completedCallback, result);
+            Jist.JistPlugin.Instance.CallFunction(completedCallback, null, result);
         }
 
         /// <summary>
@@ -113,18 +113,37 @@ namespace Wolfje.Plugins.SEconomy.SEconomyScriptPlugin {
         public Journal.IBankAccount GetBankAccount(object PlayerRep)
         {
             Journal.IBankAccount bankAccount = null;
-            Economy.EconomyPlayer ePlayer = null;
             TShockAPI.TSPlayer player = null;
 
             if (JistPlugin.Instance == null
                 || SEconomyPlugin.Instance == null
                 || (player = JistPlugin.Instance.stdTshock.GetPlayer(PlayerRep)) == null
-                || (ePlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(player.Name)) == null
-                || (bankAccount = ePlayer.BankAccount) == null) {
+                || (bankAccount = SEconomyPlugin.Instance.GetBankAccount(player)) == null) {
                 return null;
             }
 
             return bankAccount;
+        }
+
+        [JavascriptFunction("seconomy_set_multiplier")]
+        public bool SetMultiplier(int multi)
+        {
+            if (SEconomyPlugin.Instance == null) {
+                return false;
+            }
+
+            SEconomyPlugin.Instance.WorldEc.CustomMultiplier = multi;
+            return true;
+        }
+
+        [JavascriptFunction("seconomy_get_multiplier")]
+        public int GetMultiplier()
+        {
+            if (SEconomyPlugin.Instance == null) {
+                return -1;
+            }
+
+            return SEconomyPlugin.Instance.WorldEc.CustomMultiplier;
         }
 
         /// <summary>

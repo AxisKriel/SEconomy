@@ -78,7 +78,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 
 			PrintIntro();
 
-			TShockAPI.Commands.ChatCommands.Add(new TShockAPI.Command(TShock_CommandExecuted, "seconomy", "sec"));
+			TShockAPI.Commands.ChatCommands.Add(new TShockAPI.Command("seconomy.cmd", TShock_CommandExecuted, "seconomy", "sec"));
 			try {
 				Instance = new SEconomy(this);
 				if (Instance.LoadSEconomy() < 0) {
@@ -149,82 +149,98 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 				args.Player.SendInfoMessage(" * http://plugins.tw.id.au");
 				args.Player.SendInfoMessage(Locale.StringOrDefault(5, " * /sec[onomy] reload|rl - Reloads SEconomy"));
 				args.Player.SendInfoMessage(Locale.StringOrDefault(6, " * /sec[onomy] stop - Stops and unloads SEconomy"));
-				args.Player.SendInfoMessage(Locale.StringOrDefault(7, " * /sec[onomy] start - Reloads SEconomy"));
+				args.Player.SendInfoMessage(Locale.StringOrDefault(7, " * /sec[onomy] start - Starts SEconomy"));
 				return;
 			}
 
-			if ((args.Parameters[0].Equals("reload", StringComparison.CurrentCultureIgnoreCase)
-				|| args.Parameters[0].Equals("rl", StringComparison.CurrentCultureIgnoreCase))
-				&& args.Player.Group.HasPermission("seconomy.command.reload") == true) {
+            if ((args.Parameters[0].Equals("reload", StringComparison.CurrentCultureIgnoreCase)
+                || args.Parameters[0].Equals("rl", StringComparison.CurrentCultureIgnoreCase))
+                && args.Player.Group.HasPermission("seconomy.command.reload") == true) {
 
-					try {
-						await Task.Run(async () => {
-							if (Instance != null) {
-								Instance.Dispose();
-								Instance = null;
-							}
+                try {
+                    await Task.Run(async () => {
+                        if (Instance != null) {
+                            Instance.Dispose();
+                            Instance = null;
+                        }
 
-							try {
-								Instance = new SEconomy(this);
-								if (Instance.LoadSEconomy() < 0) {
-									throw new Exception("LoadSEconomy() failed.");
-								}
-								await Instance.BindToWorldAsync();
-							} catch {
-								Instance = null;
-								TShockAPI.Log.ConsoleError(genericErrorMessage);
-								throw;
-							}
-						});
-					} catch {
-						args.Player.SendErrorMessage(Locale.StringOrDefault(12, "SEconomy failed to initialize, and will be unavailable for this session."));
-						return;
-					}
-					args.Player.SendSuccessMessage(Locale.StringOrDefault(8, "SEconomy is reloaded."));
-			}
+                        try {
+                            Instance = new SEconomy(this);
+                            if (Instance.LoadSEconomy() < 0) {
+                                throw new Exception("LoadSEconomy() failed.");
+                            }
+                            await Instance.BindToWorldAsync();
+                        } catch {
+                            Instance = null;
+                            TShockAPI.Log.ConsoleError(genericErrorMessage);
+                            throw;
+                        }
+                    });
+                } catch {
+                    args.Player.SendErrorMessage(Locale.StringOrDefault(12, "SEconomy failed to initialize, and will be unavailable for this session."));
+                    return;
+                }
+                args.Player.SendSuccessMessage(Locale.StringOrDefault(8, "SEconomy is reloaded."));
+            } else if (args.Parameters[0].Equals("stop", StringComparison.CurrentCultureIgnoreCase)
+                && args.Player.Group.HasPermission("seconomy.command.stop") == true) {
+                if (Instance == null) {
+                    args.Player.SendErrorMessage(Locale.StringOrDefault(9, "seconomy stop: SEconomy is already stopped. Use /sec start to start"));
+                    return;
+                }
 
-			if (args.Parameters[0].Equals("stop", StringComparison.CurrentCultureIgnoreCase)
-				&& args.Player.Group.HasPermission("seconomy.command.stop") == true) {
-					if (Instance == null) {
-					args.Player.SendErrorMessage(Locale.StringOrDefault(9, "seconomy stop: SEconomy is already stopped. Use /sec start to start"));
-					return;
-				}
+                await Task.Run(() => {
+                    Instance.Dispose();
+                    Instance = null;
+                });
 
-				await Task.Run(() => {
-					Instance.Dispose();
-					Instance = null;
-				});
+                args.Player.SendSuccessMessage(Locale.StringOrDefault(10, "SEconomy is stopped."));
+            } else if (args.Parameters[0].Equals("start", StringComparison.CurrentCultureIgnoreCase)
+                && args.Player.Group.HasPermission("seconomy.command.start") == true) {
+                if (Instance != null) {
+                    args.Player.SendErrorMessage(Locale.StringOrDefault(11, "seconomy stop: SEconomy is already started. Use /sec stop to stop."));
+                    return;
+                }
+                try {
+                    await Task.Run(async () => {
+                        try {
+                            Instance = new SEconomy(this);
+                            if (Instance.LoadSEconomy() < 0) {
+                                throw new Exception("LoadSEconomy() failed.");
+                            }
+                            await Instance.BindToWorldAsync();
+                        } catch {
+                            Instance = null;
+                            TShockAPI.Log.ConsoleError(genericErrorMessage);
+                            throw;
+                        }
+                    });
+                } catch {
+                    args.Player.SendErrorMessage(Locale.StringOrDefault(12, "SEconomy failed to initialize, and will be unavailable for this session."));
+                    return;
+                }
 
-				args.Player.SendSuccessMessage(Locale.StringOrDefault(10, "SEconomy is stopped."));
-			}
+                args.Player.SendSuccessMessage(Locale.StringOrDefault(13, "SEconomy has started."));
+            } else if ((args.Parameters[0].Equals("multi", StringComparison.CurrentCultureIgnoreCase)
+                || args.Parameters[0].Equals("multiplier", StringComparison.CurrentCultureIgnoreCase))
+                && args.Player.Group.HasPermission("seconomy.command.multi") == true) {
+                int multi = 0;
 
-			if (args.Parameters[0].Equals("start", StringComparison.CurrentCultureIgnoreCase)
-				&& args.Player.Group.HasPermission("seconomy.command.start") == true) {
-					if (Instance != null) {
-					args.Player.SendErrorMessage(Locale.StringOrDefault(11, "seconomy stop: SEconomy is already started. Use /sec stop to stop."));
-					return;
-				}
-				try {
-					await Task.Run(async () => {
-						try {
-							Instance = new SEconomy(this);
-							if (Instance.LoadSEconomy() < 0) {
-								throw new Exception("LoadSEconomy() failed.");
-							}
-							await Instance.BindToWorldAsync();
-						} catch {
-							Instance = null;
-							TShockAPI.Log.ConsoleError(genericErrorMessage);
-							throw;
-						}
-					});
-				} catch {
-					args.Player.SendErrorMessage(Locale.StringOrDefault(12, "SEconomy failed to initialize, and will be unavailable for this session."));
-					return;
-				}
+                if (args.Parameters.Count == 1) {
+                    args.Player.SendInfoMessage("sec multi: Reward multiplier: {0}", SEconomyPlugin.Instance.WorldEc.CustomMultiplier);
+                    return;
+                }
 
-				args.Player.SendSuccessMessage(Locale.StringOrDefault(13, "SEconomy has started."));
-			}
+                if (int.TryParse(args.Parameters[1], out multi) == false
+                    || multi < 0
+                    || multi > 100) {
+                    args.Player.SendErrorMessage("sec multi: Syntax: /sec multi[plier] 1-100");
+                    return;
+                }
+
+                SEconomyPlugin.Instance.WorldEc.CustomMultiplier = multi;
+                args.Player.SendInfoMessage("sec multi: Multiplier of {0} set successfully.", multi);
+            }
+
 		}
 
         protected override void Dispose(bool disposing)

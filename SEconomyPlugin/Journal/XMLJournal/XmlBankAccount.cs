@@ -48,12 +48,6 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
             set;
         }
 
-        public Economy.EconomyPlayer Owner {
-            get {
-                return OwningJournal.SEconomyInstance.GetEconomyPlayerByBankAccountNameSafe(this.UserAccountName);
-            }
-        }
-
         public bool IsAccountEnabled {
             get { return (this.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled; }
         }
@@ -88,9 +82,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
         }
 
         public async Task<BankTransferEventArgs> TransferToAsync(int Index, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
-            Economy.EconomyPlayer ePlayer = OwningJournal.SEconomyInstance.GetEconomyPlayerSafe(Index);
+            IBankAccount account = SEconomyPlugin.Instance.GetBankAccount(Index);
 
-            return await Task.Factory.StartNew(() => TransferTo(ePlayer.BankAccount, Amount, Options, TransactionMessage, JournalMessage));
+            return await Task.Factory.StartNew(() => TransferTo(account, Amount, Options, TransactionMessage, JournalMessage));
         }
 
         public async Task<BankTransferEventArgs> TransferToAsync(IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {

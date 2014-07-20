@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Terraria;
+using TShockAPI;
+using Wolfje.Plugins.SEconomy.Journal;
 
 namespace Wolfje.Plugins.SEconomy {
 	public class SEconomy : IDisposable {
@@ -13,14 +16,15 @@ namespace Wolfje.Plugins.SEconomy {
 		public Journal.JournalTransactionCache TransactionCache { get; set; }
 		public Journal.IBankAccount WorldAccount { get; internal set; }
 		public WorldEconomy WorldEc { get; internal set; }
-		public List<Economy.EconomyPlayer> EconomyPlayers { get; internal set; }
 
-		internal System.Timers.Timer PayRunTimer { get; set; }
 		internal EventHandlers EventHandlers { get; set; }
 		internal ChatCommands ChatCommands { get; set; }
 
+        public Dictionary<Player, DateTime> IdleCache { get; protected set; }
+
 		public SEconomy(SEconomyPlugin PluginInstance)
 		{
+            this.IdleCache = new Dictionary<Player, DateTime>();
 			this.PluginInstance = PluginInstance;
 		}
 
@@ -36,7 +40,6 @@ namespace Wolfje.Plugins.SEconomy {
                 this.EventHandlers = new EventHandlers(this);
                 this.ChatCommands = new ChatCommands(this);
                 this.TransactionCache = new Journal.JournalTransactionCache();
-				this.EconomyPlayers = new List<Economy.EconomyPlayer>();
             }
             catch (Exception ex) {
                 return -1;
@@ -72,15 +75,36 @@ namespace Wolfje.Plugins.SEconomy {
 			this.RunningJournal.LoadJournal();
 		}
 
+        internal async Task<Journal.IBankAccount> CreatePlayerAccountAsync(TSPlayer player)
+        {
+            Money startingMoney;
+            Journal.IBankAccount newAccount = SEconomyPlugin.Instance.RunningJournal.AddBankAccount(player.UserAccountName, 
+                Terraria.Main.worldID, 
+                Journal.BankAccountFlags.Enabled, 
+                "");
+
+            TShockAPI.Log.ConsoleInfo(string.Format("seconomy: bank account for {0} created.", player.UserAccountName));
+
+            if (Money.TryParse(SEconomyPlugin.Instance.Configuration.StartingMoney, out startingMoney) 
+                && startingMoney > 0) {
+
+                await SEconomyPlugin.Instance.WorldAccount.TransferToAsync(newAccount, startingMoney, 
+                    Journal.BankAccountTransferOptions.AnnounceToReceiver, 
+                    "starting out.", "starting out.");
+            }
+
+            return newAccount;
+        }
+
 		/// <summary>
 		/// Called after LoadSEconomy, or on PostInitialize, this binds the current SEconomy instance
 		/// to the currently running terraria world.
 		/// </summary>
 		public async Task BindToWorldAsync()
 		{
-			Economy.EconomyPlayer ePlayer = null;
 			WorldAccount = RunningJournal.GetWorldAccount();
-			await WorldAccount.SyncBalanceAsync();
+            IBankAccount account = null;
+            await WorldAccount.SyncBalanceAsync();
 
 			TShockAPI.Log.ConsoleInfo(string.Format(SEconomyPlugin.Locale.StringOrDefault(1, "SEconomy: world account: paid {0} to players."), WorldAccount.Balance.ToLongString()));
 
@@ -88,55 +112,122 @@ namespace Wolfje.Plugins.SEconomy {
 				if (player == null) {
 					continue;
 				}
-				if ((ePlayer = GetEconomyPlayerSafe(player.Name)) == null) {
-					ePlayer = new Economy.EconomyPlayer(player.Index);
-					EconomyPlayers.Add(ePlayer);
-				}
 
-				await ePlayer.EnsureBankAccountExistsAsync();
-				await ePlayer.BankAccount.SyncBalanceAsync();
+                if ((account = GetBankAccount(player)) == null) {
+                    account = await CreatePlayerAccountAsync(player);
+                }
+
+				await account.SyncBalanceAsync();
 			}
-
-			PayRunTimer.Start();
 		}
 
 		#endregion
 
+        #region "Player idle caching"
+
+        public void RemovePlayerIdleCache(Player player)
+        {
+            if (IdleCache == null
+                || player == null
+                || IdleCache.ContainsKey(player) == false) {
+                return;
+            }
+
+            IdleCache.Remove(player);
+        }
+
+        public TimeSpan? PlayerIdleSince(Player player) {
+            if (player == null 
+                || IdleCache == null
+                || IdleCache.ContainsKey(player) == false) {
+                return null;
+            }
+
+            return DateTime.UtcNow.Subtract(IdleCache[player]);
+        }
+
+        public void UpdatePlayerIdle(Player player)
+        {
+            if (player == null || IdleCache == null) {
+                return;
+            }
+
+            if (IdleCache.ContainsKey(player) == false) {
+                IdleCache.Add(player, DateTime.UtcNow);
+            }
+
+            IdleCache[player] = DateTime.UtcNow;
+        }
+
+        #endregion
+
+        public IBankAccount GetBankAccount(TShockAPI.TSPlayer tsPlayer)
+        {
+            if (tsPlayer == null || RunningJournal == null) {
+                return null;
+            }
+
+            if (tsPlayer == TSPlayer.Server) {
+                return WorldAccount;
+            }
+
+            try {
+                return RunningJournal.GetBankAccountByName(tsPlayer.UserAccountName);
+            } catch (Exception ex) {
+                TShockAPI.Log.ConsoleError("seconomy error: Error getting bank account for {0}: {1}", 
+                    tsPlayer.Name, ex.Message);
+                return null;
+            }
+        }
+
+        public IBankAccount GetBankAccount(Terraria.Player player)
+        {
+            return GetBankAccount(player.whoAmi);
+        }
+
+        public IBankAccount GetBankAccount(string userAccountName)
+        {
+            return GetBankAccount(TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == userAccountName));
+        }
+
+        public IBankAccount GetPlayerBankAccount(string playerName)
+        {
+            return GetBankAccount(TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Name == playerName));
+        }
+
+        public IBankAccount GetBankAccount(int who)
+        {
+            if (who < 0) {
+                return GetBankAccount(TSPlayer.Server);
+            }
+            return GetBankAccount(TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == who));
+        }
+
 		/// <summary>
 		/// Gets an economy-enabled player by their player name. 
 		/// </summary>
-		public Economy.EconomyPlayer GetEconomyPlayerByBankAccountNameSafe(string Name)
+        [Obsolete("Use GetBankAccount() instead.", true)]
+		public object GetEconomyPlayerByBankAccountNameSafe(string Name)
 		{
-			if (EconomyPlayers == null) {
-				return null;
-			}
-
-			return EconomyPlayers.FirstOrDefault(i => (i.BankAccount != null) && i.BankAccount.UserAccountName == Name);
+            throw new NotSupportedException("Use GetBankAccount() instead.");
 		}
 
 		/// <summary>
 		/// Gets an economy-enabled player by their index.  This method is thread-safe.
 		/// </summary>
-		public Economy.EconomyPlayer GetEconomyPlayerSafe(int Id)
+        [Obsolete("Use GetBankAccount() instead.", true)]
+		public object GetEconomyPlayerSafe(int Id)
 		{
-			if (Id < 0) {
-				return new Economy.EconomyPlayer(-1) {
-					BankAccount = WorldAccount
-				};
-			}
-
-			return this.EconomyPlayers.FirstOrDefault(i => i.Index == Id);
+            throw new NotSupportedException("Use GetBankAccount() instead.");
 		}
 
 		/// <summary>
 		/// Gets an economy-enabled player by their player name. 
 		/// </summary>
-		public Economy.EconomyPlayer GetEconomyPlayerSafe(string Name)
+        [Obsolete("Use GetBankAccount() instead.", true)]
+		public object GetEconomyPlayerSafe(string Name)
 		{
-			if (EconomyPlayers == null) {
-				return null;
-			}
-			return EconomyPlayers.FirstOrDefault(i => i.TSPlayer.Name == Name);
+            throw new NotSupportedException("Use GetBankAccount() instead.");
 		}
 
 		#region "IDisposable"

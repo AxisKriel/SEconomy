@@ -6,14 +6,24 @@ using System.Threading;
 using TerrariaApi.Server;
 using Terraria;
 using Wolfje.Plugins.SEconomy.Configuration.WorldConfiguration;
+using Wolfje.Plugins.SEconomy.Journal;
+using TShockAPI;
 
 namespace Wolfje.Plugins.SEconomy {
 
 	/// <summary>
-	/// World economy. Provides monetary gain and loss as a result of interaction in the world, including mobs and players
+	/// World economy. Provides monetary gain and loss as a 
+    /// result of interaction in the world, including mobs 
+    /// and players.
 	/// </summary>
 	public class WorldEconomy : IDisposable {
 		protected SEconomy Parent { get; set; }
+
+        /// <summary>
+        /// Gets or sets a multiplier for mob kills and deaths
+        /// after calculation.
+        /// </summary>
+        public int CustomMultiplier { get; set; }
 
 		/// <summary>
 		/// Format for this dictionary:
@@ -30,17 +40,20 @@ namespace Wolfje.Plugins.SEconomy {
 		protected Dictionary<int, int> PVPDamage = new Dictionary<int, int>();
 
 		/// <summary>
-		/// synch object for access to the dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
+		/// synch object for access to the dictionary.  You MUST obtain 
+        /// a mutex through this object to access the dictionary member.
 		/// </summary>
 		protected readonly object __dictionaryLock = new object();
 
 		/// <summary>
-		/// synch object for access to the pvp dictionary.  You MUST obtain a mutex through this object to access the volatile dictionary member.
+		/// synch object for access to the pvp dictionary.  You MUST obtain
+        /// a mutex through this object to access the dictionary member.
 		/// </summary>
 		protected readonly object __pvpLock = new object();
 
 		/// <summary>
-		/// Synch object for access to the packet handler critical sections, forcing packets to be marshalled in a serialized manner.
+		/// Synch object for access to the packet handler critical sections,
+        /// forcing packets to be marshalled in a serialized manner.
 		/// </summary>
 		protected readonly object __packetHandlerMutex = new object();
 
@@ -57,12 +70,15 @@ namespace Wolfje.Plugins.SEconomy {
 
 		public WorldEconomy(SEconomy parent)
 		{
-			this.WorldConfiguration = Configuration.WorldConfiguration.WorldConfig.LoadConfigurationFromFile("tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "SEconomy.WorldConfig.json");
+			this.WorldConfiguration = Configuration.WorldConfiguration.WorldConfig.LoadConfigurationFromFile(
+                "tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "SEconomy.WorldConfig.json");
 			this.Parent = parent;
 
 			ServerApi.Hooks.NetGetData.Register(Parent.PluginInstance, NetHooks_GetData);
 			ServerApi.Hooks.NetSendData.Register(Parent.PluginInstance, NetHooks_SendData);
 			ServerApi.Hooks.GameUpdate.Register(Parent.PluginInstance, Game_Update);
+
+            this.CustomMultiplier = 1;
 		}
 
 		public void Dispose()
@@ -134,7 +150,8 @@ namespace Wolfje.Plugins.SEconomy {
 		protected void GiveRewardsForNPC(Terraria.NPC NPC)
 		{
 			List<PlayerDamage> playerDamageList = null;
-			Economy.EconomyPlayer ePlayer = null;
+            IBankAccount account;
+            TSPlayer player;
 			Money rewardMoney = 0L;
 
 			if (DamageDictionary.ContainsKey(NPC)) {
@@ -151,27 +168,28 @@ namespace Wolfje.Plugins.SEconomy {
 
 			if ((NPC.boss && WorldConfiguration.MoneyFromBossEnabled) || (!NPC.boss && WorldConfiguration.MoneyFromNPCEnabled)) {
 				foreach (PlayerDamage damage in playerDamageList) {
-					if (damage.Player == null) {
+					if (damage.Player == null
+                        || (player = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == damage.Player.whoAmi)) == null
+                        || (account = Parent.GetBankAccount(player)) == null) {
 						continue;
 					}
 
-					ePlayer = Parent.GetEconomyPlayerSafe(damage.Player.whoAmi);
-					rewardMoney = Convert.ToInt64(Math.Round(Convert.ToDouble(WorldConfiguration.MoneyPerDamagePoint) * damage.Damage));
+					rewardMoney = CustomMultiplier * Convert.ToInt64(Math.Round(Convert.ToDouble(WorldConfiguration.MoneyPerDamagePoint) * damage.Damage));
 
 					//load override by NPC type, this allows you to put a modifier on the base for a specific mob type.
 					Configuration.WorldConfiguration.NPCRewardOverride overrideReward = WorldConfiguration.Overrides.FirstOrDefault(i => i.NPCID == NPC.type);
 					if (overrideReward != null) {
-						rewardMoney = Convert.ToInt64(Math.Round(Convert.ToDouble(overrideReward.OverridenMoneyPerDamagePoint) * damage.Damage));
+						rewardMoney = CustomMultiplier * Convert.ToInt64(Math.Round(Convert.ToDouble(overrideReward.OverridenMoneyPerDamagePoint) * damage.Damage));
 					}
 
-					if (ePlayer == null || ePlayer.BankAccount == null || rewardMoney <= 0 || ePlayer.TSPlayer.Group.HasPermission("seconomy.world.mobgains") == false) {
+					if (rewardMoney <= 0 || player.Group.HasPermission("seconomy.world.mobgains") == false) {
 						continue;
 					}
 
 					Journal.CachedTransaction fund = new Journal.CachedTransaction() {
 						Aggregations = 1,
 						Amount = rewardMoney,
-						DestinationBankAccountK = ePlayer.BankAccount.BankAccountK,
+						DestinationBankAccountK = account.BankAccountK,
 						Message = NPC.name,
 						SourceBankAccountK = Parent.WorldAccount.BankAccountK
 					};
@@ -202,21 +220,28 @@ namespace Wolfje.Plugins.SEconomy {
 			}
 		}
 
-		protected Money GetDeathPenalty(Economy.EconomyPlayer ePlayer)
+		protected Money GetDeathPenalty(TSPlayer player)
 		{
 			Money penalty = 0L;
+            IBankAccount account;
 			StaticPenaltyOverride rewardOverride;
+
+            if (Parent == null
+                || (account = Parent.GetBankAccount(player)) == null) {
+                    return default(Money);
+            }
 
 			if (WorldConfiguration.StaticDeathPenalty == false) {
 				//The penalty defaults to a percentage of the players' current balance.
-				return (long)Math.Round(Convert.ToDouble(ePlayer.BankAccount.Balance.Value) 
+                return (long)Math.Round(Convert.ToDouble(account.Balance.Value) 
 					* (Convert.ToDouble(WorldConfiguration.DeathPenaltyPercentValue) 
-					* Math.Pow(10, -2)));
+					* Math.Pow(10, -2))
+                    * CustomMultiplier);
 			}
 
 			penalty = WorldConfiguration.StaticPenaltyAmount;
-			if ((rewardOverride = WorldConfiguration.StaticPenaltyOverrides.FirstOrDefault(i => i.TShockGroup == ePlayer.TSPlayer.Group.Name)) != null) {
-				penalty = rewardOverride.StaticRewardOverride;
+			if ((rewardOverride = WorldConfiguration.StaticPenaltyOverrides.FirstOrDefault(i => i.TShockGroup == player.Group.Name)) != null) {
+				penalty = CustomMultiplier * rewardOverride.StaticRewardOverride;
 			}
 
 			return penalty;
@@ -227,14 +252,13 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		protected void ProcessDeath(int DeadPlayerSlot, bool PVPDeath)
 		{
-			TShockAPI.TSPlayer deadPlayer = null;
-			Journal.CachedTransaction worldToPlayerTx = null;
-			Journal.CachedTransaction playerToWorldTx = null;
-			Economy.EconomyPlayer eKiller = null;
-			Economy.EconomyPlayer eDeadPlayer = null;
-			Money penalty = default(Money);
-			int lastHitterSlot = default(int);
-
+            TSPlayer murderer = null, murdered = null;
+            IBankAccount murderedAccount, murdererAccount;
+            Money penalty = default(Money);
+            int lastHitterSlot = default(int);
+            Journal.CachedTransaction worldToPlayerTx = null,
+                playerToWorldTx = null;
+            
 			//get the last hitter ID out of the dictionary
 			lock (__dictionaryLock) {
 				if (PVPDamage.ContainsKey(DeadPlayerSlot)) {
@@ -244,19 +268,18 @@ namespace Wolfje.Plugins.SEconomy {
 				}
 			}
 
-			if ((deadPlayer = TShockAPI.TShock.Players.ElementAtOrDefault(DeadPlayerSlot)) == null
-				|| deadPlayer.Group.HasPermission("seconomy.world.bypassdeathpenalty") == true
-				|| (eDeadPlayer = Parent.GetEconomyPlayerSafe(DeadPlayerSlot)) == null
-				|| eDeadPlayer.BankAccount == null
-				|| (penalty = GetDeathPenalty(eDeadPlayer)) == 0) {
+			if ((murdered = TShockAPI.TShock.Players.ElementAtOrDefault(DeadPlayerSlot)) == null
+				|| murdered.Group.HasPermission("seconomy.world.bypassdeathpenalty") == true
+				|| (murderedAccount = Parent.GetBankAccount(murdered)) == null
+				|| (penalty = GetDeathPenalty(murdered)) == 0) {
 				return;
 			}
 
 			playerToWorldTx = new Journal.CachedTransaction() {
 				DestinationBankAccountK = Parent.WorldAccount.BankAccountK,
-				SourceBankAccountK = eDeadPlayer.BankAccount.BankAccountK,
+				SourceBankAccountK = murderedAccount.BankAccountK,
 				Message = "dying",
-				Options = Journal.BankAccountTransferOptions.MoneyTakenOnDeath | Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.PvP,
+				Options = Journal.BankAccountTransferOptions.MoneyTakenOnDeath | Journal.BankAccountTransferOptions.AnnounceToSender,
 				Amount = penalty
 			};
 
@@ -265,17 +288,17 @@ namespace Wolfje.Plugins.SEconomy {
 
 			//but if it's a PVP death, the killer gets the losers penalty if enabled
 			if (PVPDeath && WorldConfiguration.MoneyFromPVPEnabled && WorldConfiguration.KillerTakesDeathPenalty) {
-				if ((eKiller = Parent.GetEconomyPlayerSafe(lastHitterSlot)) == null
-					|| eKiller.BankAccount == null) {
+                if ((murderer = TShockAPI.TShock.Players.ElementAtOrDefault(lastHitterSlot)) == null
+					|| (murdererAccount = Parent.GetBankAccount(murderer)) == null) {
 					return;
 				}
 				
 				worldToPlayerTx = new Journal.CachedTransaction() {
 					SourceBankAccountK = Parent.WorldAccount.BankAccountK,
-					DestinationBankAccountK = eKiller.BankAccount.BankAccountK,
+					DestinationBankAccountK = murdererAccount.BankAccountK,
 					Amount = penalty,
-					Message = "killing " + eDeadPlayer.TSPlayer.Name,
-					Options = Journal.BankAccountTransferOptions.AnnounceToReceiver | Journal.BankAccountTransferOptions.PvP,
+					Message = "killing " + murdered.Name,
+					Options = Journal.BankAccountTransferOptions.AnnounceToReceiver,
 				};
 
 				Parent.TransactionCache.AddCachedTransaction(worldToPlayerTx);

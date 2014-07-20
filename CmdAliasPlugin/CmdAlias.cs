@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Wolfje.Plugins.SEconomy;
 using Wolfje.Plugins.SEconomy.Extensions;
 using Wolfje.Plugins.SEconomy.CmdAliasModule.Extensions;
+using TShockAPI;
+using Wolfje.Plugins.SEconomy.Journal;
 
 namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
     public class CmdAlias : IDisposable {
@@ -101,9 +103,9 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
             foreach (AliasCommand alias in Configuration.CommandAliases.Where(i => i.CommandAlias == e.CommandIdentifier)) {
                 DateTime canRunNext = DateTime.MinValue;
                 Money commandCost = 0;
-                Economy.EconomyPlayer ePlayer = null;
+                IBankAccount playerAccount;
 
-                if (alias == null) {
+                if (alias == null || SEconomyPlugin.Instance == null) {
                     continue;
                 }
 
@@ -132,27 +134,29 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
                     return;
                 }
 
-                ePlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(e.CommandArgs.Player.Index);
-                if (ePlayer == null || ePlayer.BankAccount == null) {
+                
+                if ((playerAccount = SEconomyPlugin.Instance.GetBankAccount(e.CommandArgs.Player)) == null) {
                     e.CommandArgs.Player.SendErrorMessage("This command costs money and you don't have a bank account.  Please log in first.");
                     return;
                 }
 
-                if (ePlayer.BankAccount.IsAccountEnabled == false) {
+                if (playerAccount.IsAccountEnabled == false) {
                     e.CommandArgs.Player.SendErrorMessage("This command costs money and your account is disabled.");
                     return;
                 }
 
-                if (ePlayer.BankAccount.Balance < commandCost) {
-                    Money difference = commandCost - ePlayer.BankAccount.Balance;
+                if (playerAccount.Balance < commandCost) {
+                    Money difference = commandCost - playerAccount.Balance;
                     e.CommandArgs.Player.SendErrorMessage("This command costs {0}. You need {1} more to be able to use this.", commandCost.ToLongString(), difference.ToLongString());
                 }
 
                 try {
                     //Take money off the player, and indicate that this is a payment for something tangible.
-                    Journal.BankTransferEventArgs trans = ePlayer.BankAccount.TransferTo(SEconomyPlugin.Instance.WorldAccount, commandCost, Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPayment, "", string.Format("AC: {0} cmd {1}", ePlayer.TSPlayer.Name, alias.CommandAlias));
+                    Journal.BankTransferEventArgs trans = playerAccount.TransferTo(SEconomyPlugin.Instance.WorldAccount, commandCost, Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPayment, 
+                        "", 
+                        string.Format("AC: {0} cmd {1}", e.CommandArgs.Player.Name, alias.CommandAlias));
                     if (trans.TransferSucceeded) {
-                        DoCommands(alias, ePlayer.TSPlayer, e.CommandArgs.Parameters);
+                        DoCommands(alias, e.CommandArgs.Player, e.CommandArgs.Parameters);
                         PopulateCooldownList(cooldownReference);
                         return;
                     }
@@ -284,11 +288,11 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
                 if (runasFunctionRegex.IsMatch(mangledString)) {
                     foreach (Match match in runasFunctionRegex.Matches(mangledString)) {
                         string impersonatedName = match.Groups[2].Value;
-                        Economy.EconomyPlayer impersonatedPlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(impersonatedName);
+                        TSPlayer impersonatedPlayer = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Name == impersonatedName);
 
                         if (impersonatedPlayer != null) {
                             string commandToRun = match.Groups[3].Value;
-                            player = impersonatedPlayer.TSPlayer;
+                            player = impersonatedPlayer;
 
                             mangledString = commandToRun.Trim();
                         }
@@ -301,13 +305,13 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
                     foreach (Match match in msgRegex.Matches(mangledString)) {
                         string msgTarget = match.Groups[2].Value.Trim();
                         string message = match.Groups[3].Value.Trim();
-                        Economy.EconomyPlayer destinationPlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(msgTarget);
+                        TSPlayer destinationPlayer = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Name == msgTarget);
 
                         if (destinationPlayer != null) {
                             //custom command, skip forwarding of the command to the tshock executer
                             executeCommand = false;
 
-                            destinationPlayer.TSPlayer.SendInfoMessage(message);
+                            destinationPlayer.SendInfoMessage(message);
                         }
                     }
                 }

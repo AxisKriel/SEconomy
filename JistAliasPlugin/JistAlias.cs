@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TerrariaApi.Server;
+using TShockAPI;
 using Wolfje.Plugins.SEconomy.CmdAliasModule;
+using Wolfje.Plugins.SEconomy.Journal;
 
 namespace Wolfje.Plugins.SEconomy.JistAliasModule {
     public class JistAlias : IDisposable {
@@ -140,7 +142,7 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
         /// <summary>
         /// Refunds a player the full cost of an alias.
         /// </summary>
-        internal void RefundAlias(Money commandCost, Economy.EconomyPlayer toPlayer)
+        internal void RefundAlias(Money commandCost, TSPlayer toPlayer)
         {
             if (commandCost == 0
                 || toPlayer == null
@@ -156,7 +158,7 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
             foreach (JScriptAliasCommand alias in jsAliases.Where(i => i.CommandAlias == e.CommandIdentifier)) {
                 DateTime canRunNext = DateTime.MinValue;
                 Money commandCost = 0;
-                Economy.EconomyPlayer ePlayer = null;
+                IBankAccount account;
 
                 if (alias == null) {
                     continue;
@@ -212,19 +214,19 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
                     return;
                 }
 
-                ePlayer = SEconomyPlugin.Instance.GetEconomyPlayerSafe(e.CommandArgs.Player.Index);
-                if (ePlayer == null || ePlayer.BankAccount == null) {
+                
+                if ((account = SEconomyPlugin.Instance.GetBankAccount(e.CommandArgs.Player)) == null) {
                     e.CommandArgs.Player.SendErrorMessage("This command costs money and you don't have a bank account.  Please log in first.");
                     return;
                 }
 
-                if (ePlayer.BankAccount.IsAccountEnabled == false) {
+                if (account.IsAccountEnabled == false) {
                     e.CommandArgs.Player.SendErrorMessage("This command costs money and your account is disabled.");
                     return;
                 }
 
-                if (ePlayer.BankAccount.Balance < commandCost) {
-                    Money difference = commandCost - ePlayer.BankAccount.Balance;
+                if (account.Balance < commandCost) {
+                    Money difference = commandCost - account.Balance;
                     e.CommandArgs.Player.SendErrorMessage("This command costs {0}. You need {1} more to be able to use this.",
                         commandCost.ToLongString(),
                         difference.ToLongString());
@@ -236,11 +238,11 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
                      * that this is a payment for something 
                      * tangible.
                      */
-                    Journal.BankTransferEventArgs trans = await ePlayer.BankAccount.TransferToAsync(SEconomyPlugin.Instance.WorldAccount,
+                    Journal.BankTransferEventArgs trans = await account.TransferToAsync(SEconomyPlugin.Instance.WorldAccount,
                         commandCost,
                         Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPayment,
                         "",
-                        string.Format("AC: {0} cmd {1}", ePlayer.TSPlayer.Name, alias.CommandAlias));
+                        string.Format("AC: {0} cmd {1}", e.CommandArgs.Player.Name, alias.CommandAlias));
 
                     if (trans.TransferSucceeded == false) {
                         e.CommandArgs.Player.SendErrorMessage("Your payment failed.");
@@ -258,7 +260,7 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
                          * something else.
                          */
                         PopulateCooldownList(cooldownReference);
-                        Jist.JistPlugin.Instance.CallFunction(alias.func, alias, ePlayer.TSPlayer, e.CommandArgs.Parameters);
+                        Jist.JistPlugin.Instance.CallFunction(alias.func, alias, e.CommandArgs.Player.Name, e.CommandArgs.Parameters);
                     } catch (Exception) {
                         /*
                          * Command failed but the person paid money for it.
@@ -267,10 +269,10 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
                          */
                         Jist.ScriptLog.ErrorFormat("alias",
                             "{0} paid {1} for alias {2} but it failed and was refunded.",
-                            ePlayer.TSPlayer.Name,
+                            e.CommandArgs.Player.Name,
                             commandCost.ToString(),
                             alias.CommandAlias);
-                        RefundAlias(commandCost, ePlayer);
+                        RefundAlias(commandCost, e.CommandArgs.Player);
                     }
                 } catch (Exception ex) {
                     e.CommandArgs.Player.SendErrorMessage("An error occured in the alias.");

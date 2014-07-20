@@ -39,14 +39,6 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public Money Balance { get; set; }
 
-		public Economy.EconomyPlayer Owner
-		{
-			get
-			{
-				return OwningJournal.SEconomyInstance.GetEconomyPlayerByBankAccountNameSafe(this.UserAccountName);
-			}
-		}
-
 		public bool IsAccountEnabled
 		{
 			get { return (this.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled; }
@@ -145,12 +137,14 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public async Task<BankTransferEventArgs> TransferToAsync(int Index, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)
 		{
-			Economy.EconomyPlayer ePlayer = null;
-			if ((ePlayer = OwningJournal.SEconomyInstance.GetEconomyPlayerSafe(Index)) == null) {
-				return null;
-			}
+            IBankAccount account;
 
-			return await Task.Factory.StartNew(() => TransferTo(ePlayer.BankAccount, Amount, Options, TransactionMessage, JournalMessage));
+            if (SEconomyPlugin.Instance == null
+                || (account = SEconomyPlugin.Instance.GetBankAccount(Index)) == null) {
+                return null;
+            }
+
+			return await Task.Factory.StartNew(() => TransferTo(account, Amount, Options, TransactionMessage, JournalMessage));
 		}
 
 		public async Task<BankTransferEventArgs> TransferToAsync(IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)

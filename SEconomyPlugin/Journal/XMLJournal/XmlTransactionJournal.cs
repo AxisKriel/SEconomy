@@ -14,6 +14,7 @@ using System.Threading;
 using System.Collections;
 using System.Text;
 using Wolfje.Plugins.SEconomy.Journal.XMLJournal;
+using TShockAPI;
 
 namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
@@ -208,11 +209,18 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 		public IBankAccount GetBankAccountByName(string UserAccountName)
 		{
+            if (bankAccounts == null) {
+                return null;
+            }
 			return bankAccounts.FirstOrDefault(i => i.UserAccountName == UserAccountName);
 		}
 
 		public IBankAccount GetBankAccount(long BankAccountK)
 		{
+            if (bankAccounts == null) {
+                return null;
+            }
+
 			for (int i = 0; i < bankAccounts.Count; ++i) {
 				IBankAccount acct = bankAccounts[i];
 
@@ -226,6 +234,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 		public IEnumerable<IBankAccount> GetBankAccountList(long BankAccountK)
 		{
+            if (bankAccounts == null) {
+                return null;
+            }
 			return BankAccounts.Where(i => i.BankAccountK == BankAccountK);
 		}
 
@@ -250,6 +261,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 		public void DeleteBankAccount(long BankAccountK)
 		{
+            if (bankAccounts == null) {
+                return;
+            }
 			bankAccounts.RemoveAll(i => i.BankAccountK == BankAccountK);
 		}
 
@@ -645,14 +659,16 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			//abandon the old journal and assign the squashed one
 			Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(82, "re-syncing online accounts."));
 
-			foreach (Journal.IBankAccount account in BankAccounts) {
-				IBankAccount runtimeAccount = GetBankAccount(account.BankAccountK);
-
-				if (runtimeAccount != null && runtimeAccount.Owner != null) {
-					Console.WriteLine("re-syncing {0}", runtimeAccount.Owner.TSPlayer.Name);
-					await runtimeAccount.SyncBalanceAsync();
-				}
-			}
+            foreach (TSPlayer player in TShockAPI.TShock.Players) {
+                IBankAccount account = null;
+                if (player == null
+                    || SEconomyPlugin.Instance == null
+                    || (account = SEconomyPlugin.Instance.GetBankAccount(player)) == null) {
+                    return;
+                }
+                Console.WriteLine("re-syncing {0}", player.Name);
+                await account.SyncBalanceAsync();
+            }
 
 			await SaveJournalAsync();
 			if (responsibleForTurningBackupsBackOn) {
@@ -732,6 +748,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 						BankTransactionPending(this, pendingTransaction);
 					}
 
+                    if (pendingTransaction == null) {
+                        return args;
+                    }
+
 					args.Amount = pendingTransaction.Amount;
 					args.SenderAccount = pendingTransaction.FromAccount;
 					args.ReceiverAccount = pendingTransaction.ToAccount;
@@ -766,17 +786,23 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 					}
 				} else {
 					args.TransferSucceeded = false;
+                    TSPlayer from;
+
+                    if ((from = TShockAPI.TShock.Players.FirstOrDefault(i => i.UserAccountName == FromAccount.UserAccountName)) == null) {
+                        return args;
+                    }
+
 
 					/*
 					 * concept: ??????
 					 * if the amount coming from "this" account is a negative then the "sender account" needs to know the transfer failed.
 					 * if the amount coming from "this" acount is a positive then the "reciever account" needs to know the transfer failed.
 					 */
-					if (ToAccount.IsSystemAccount == false && ToAccount.IsPluginAccount == false && FromAccount.Owner != null) {
+					if (ToAccount.IsSystemAccount == false && ToAccount.IsPluginAccount == false) {
 						if (Amount < 0) {
-							FromAccount.Owner.TSPlayer.SendErrorMessage(SEconomyPlugin.Locale.StringOrDefault(83, "Invalid amount."));
+							from.SendErrorMessage(SEconomyPlugin.Locale.StringOrDefault(83, "Invalid amount."));
 						} else {
-							FromAccount.Owner.TSPlayer.SendErrorMessage(SEconomyPlugin.Locale.StringOrDefault(84, "You need {0} more to make this payment."), ((Money)(FromAccount.Balance - Amount)).ToLongString());
+							from.SendErrorMessage(SEconomyPlugin.Locale.StringOrDefault(84, "You need {0} more to make this payment."), ((Money)(FromAccount.Balance - Amount)).ToLongString());
 						}
 					}
 				}

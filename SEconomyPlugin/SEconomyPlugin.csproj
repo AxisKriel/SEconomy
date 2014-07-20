@@ -59,7 +59,6 @@
     <Compile Include="Configuration\SQLConnectionProperties.cs" />
     <Compile Include="Configuration\WorldConfiguration\WorldConfig.cs" />
     <Compile Include="ConsoleEx.cs" />
-    <Compile Include="Economy\EconomyPlayer.cs" />
     <Compile Include="Economy\Money.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="EventHandlers.cs" />
@@ -153,6 +152,6 @@
   </Target>
   -->
   <Target Name="AfterBuild">
-  <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SolutionDir)\..\ServerInstance4.2\ServerPlugins" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SolutionDir)\..\ServerInstance4.2\ServerPlugins" />
   </Target>
 </Project>

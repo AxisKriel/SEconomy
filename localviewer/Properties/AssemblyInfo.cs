@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("localeviewer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("NEXTDC Limitied")]
+[assembly: AssemblyCompany("Tyler W.")]
 [assembly: AssemblyProduct("localeviewer")]
-[assembly: AssemblyCopyright("Copyright © NEXTDC Limitied 2014")]
+[assembly: AssemblyCopyright("Copyright © Tyler W. 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

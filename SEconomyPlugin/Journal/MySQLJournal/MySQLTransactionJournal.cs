@@ -104,16 +104,25 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public IBankAccount GetBankAccountByName(string UserAccountName)
 		{
+            if (bankAccounts == null) {
+                return null;
+            }
 			return bankAccounts.FirstOrDefault(i => i.UserAccountName == UserAccountName);
 		}
 
 		public IBankAccount GetBankAccount(long BankAccountK)
 		{
+            if (bankAccounts == null) {
+                return null;
+            }
 			return bankAccounts.FirstOrDefault(i => i.BankAccountK == BankAccountK);
 		}
 
 		public IEnumerable<IBankAccount> GetBankAccountList(long BankAccountK)
 		{
+            if (bankAccounts == null) {
+                return null;
+            }
 			return BankAccounts.Where(i => i.BankAccountK == BankAccountK);
 		}
 

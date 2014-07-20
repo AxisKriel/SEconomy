@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Threading.Tasks;
+using TShockAPI;
 
 namespace Wolfje.Plugins.SEconomy.Forms {
 	public partial class CAccountManagementWnd : Form {
@@ -30,14 +31,17 @@ namespace Wolfje.Plugins.SEconomy.Forms {
 		async Task LoadTransactionsForUser(long BankAccountK)
 		{
 			Journal.IBankAccount selectedAccount = SecInstance.RunningJournal.GetBankAccount(BankAccountK);
+            TSPlayer player;
 			var qTransactions = selectedAccount.Transactions;
 
 			gvTransactions.DataSource = null;
 			gvTransactions.DataSource = qTransactions;
 			tranList = SecInstance.RunningJournal.Transactions;
 
+            player = TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == selectedAccount.UserAccountName);
+
 			lblStatus.Text = string.Format("Loaded {0} transactions for {1}.", qTransactions.Count(), selectedAccount.UserAccountName);
-			if (selectedAccount.Owner != null) {
+			if (player != null) {
 				lblOnline.Text = "Online";
 				lblOnline.ForeColor = System.Drawing.Color.DarkGreen;
 			} else {
