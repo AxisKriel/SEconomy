@@ -52,6 +52,27 @@ CREATE TABLE `bank_account_transaction` (
   KEY `fk_transaction-bank_account_idx` (`bank_account_fk`),
   CONSTRAINT `fk_transaction-bank_account` FOREIGN KEY (`bank_account_fk`) REFERENCES `bank_account` (`bank_account_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+DROP PROCEDURE IF EXISTS `seconomy_squash`;
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `seconomy_squash`()
+BEGIN
+	drop temporary table if exists seconomy_squash_temp;
+	create temporary table if not exists seconomy_squash_temp engine=memory
+		select bank_account_id, ifnull(sum(amount),0) AS total_amount
+		from bank_account
+		left outer join bank_account_transaction on bank_account_id = bank_account_fk
+		group by bank_account_id;
+
+	truncate table bank_account_transaction;
+
+	insert into bank_account_transaction (bank_account_fk, amount, message, flags, flags2, transaction_date_utc)
+		select bank_account_id, total_amount, 'Transaction Squash', 3, 0, UTC_TIMESTAMP()
+		from seconomy_squash_temp;
+END;
+
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

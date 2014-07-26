@@ -110,7 +110,6 @@ namespace xml2sql {
 			sec = new SEconomy(null);
 			SEconomyPlugin.Instance = sec;
 			XmlTransactionJournal journal = null;
-			string connectionString = null;
 			int oldPercent = 0, skipped = 0;
 			Dictionary<long, long> oldNewTransactions = new Dictionary<long, long>();
 			JournalLoadingPercentChangedEventArgs args = new JournalLoadingPercentChangedEventArgs() {

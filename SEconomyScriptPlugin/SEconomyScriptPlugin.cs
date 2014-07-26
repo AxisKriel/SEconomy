@@ -54,12 +54,16 @@ namespace Wolfje.Plugins.SEconomy.SEconomyScriptPlugin {
             result = await From.TransferToAsync(To, Amount, 
                 Journal.BankAccountTransferOptions.AnnounceToSender, 
                 TxMessage, TxMessage);
-           
+
+            if (result == null) {
+                result = new BankTransferEventArgs() { TransferSucceeded = false };
+            }
+
             Jist.JistPlugin.Instance.CallFunction(completedCallback, null, result);
         }
 
         [JavascriptFunction("seconomy_pay_async")]
-        public void SEconomyPayAsync(Journal.IBankAccount From, Journal.IBankAccount To, Money Amount, string TxMessage, JsValue completedCallback)
+        public async void SEconomyPayAsync(Journal.IBankAccount From, Journal.IBankAccount To, Money Amount, string TxMessage, JsValue completedCallback)
         {
             BankTransferEventArgs result = null;
             if (JistPlugin.Instance == null
@@ -67,11 +71,15 @@ namespace Wolfje.Plugins.SEconomy.SEconomyScriptPlugin {
                 return;
             }
             
-            result = From.TransferTo(To, Amount,
+            result = await From.TransferToAsync(To, Amount,
                 Journal.BankAccountTransferOptions.AnnounceToReceiver 
                     | Journal.BankAccountTransferOptions.AnnounceToSender 
                     | Journal.BankAccountTransferOptions.IsPayment,
                 TxMessage, TxMessage);
+
+            if (result == null) {
+                result = new BankTransferEventArgs() { TransferSucceeded = false };
+            }
 
             Jist.JistPlugin.Instance.CallFunction(completedCallback, null, result);
         }

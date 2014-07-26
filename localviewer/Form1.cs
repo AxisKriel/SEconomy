@@ -53,7 +53,7 @@ namespace localviewer {
 					item.SubItems.Add(i.ToString());
 					item.SubItems.Add(locProvider.StringOrDefault(i, "<Unknown>"));
 				}
-			} catch (Exception ex) {
+			} catch (Exception) {
 				return;
 			}
 

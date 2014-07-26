@@ -135,6 +135,7 @@ namespace Wolfje.Plugins.SEconomy {
 		protected async void PlayerHooks_PlayerPostLogin(TShockAPI.Hooks.PlayerPostLoginEventArgs e)
 		{
             IBankAccount account;
+            await Task.Delay(2500);
 
             if ((account = Parent.GetBankAccount(e.Player)) == null) {
                 if ((account = await Parent.CreatePlayerAccountAsync(e.Player)) == null) {
@@ -144,8 +145,7 @@ namespace Wolfje.Plugins.SEconomy {
             }
 
             await account.SyncBalanceAsync();
-			await Task.Delay(2500);
-
+			
 			e.Player.SendInfoMessage(SEconomyPlugin.Locale.StringOrDefault(26, "You have {0}."), 
                 account.Balance.ToLongString());
 		}

@@ -41,7 +41,7 @@ namespace Wolfje.Plugins.SEconomy {
                 this.ChatCommands = new ChatCommands(this);
                 this.TransactionCache = new Journal.JournalTransactionCache();
             }
-            catch (Exception ex) {
+            catch (Exception) {
                 return -1;
             }
 
@@ -102,21 +102,25 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		public async Task BindToWorldAsync()
 		{
-			WorldAccount = RunningJournal.GetWorldAccount();
             IBankAccount account = null;
-            await WorldAccount.SyncBalanceAsync();
 
+            if ((WorldAccount = RunningJournal.GetWorldAccount()) == null) {
+                TShockAPI.Log.ConsoleError("seconomy bind:  The journal system did not return a world account.  This is an internal error.");
+                return;
+            }
+
+            await WorldAccount.SyncBalanceAsync();
 			TShockAPI.Log.ConsoleInfo(string.Format(SEconomyPlugin.Locale.StringOrDefault(1, "SEconomy: world account: paid {0} to players."), WorldAccount.Balance.ToLongString()));
 
+            await Task.Delay(5000);
 			foreach (var player in TShockAPI.TShock.Players) {
-				if (player == null) {
+				if (player == null
+                    || string.IsNullOrWhiteSpace(player.Name) == true
+                    || string.IsNullOrWhiteSpace(player.UserAccountName) == true
+                    || (account = GetBankAccount(player)) == null) {
 					continue;
 				}
-
-                if ((account = GetBankAccount(player)) == null) {
-                    account = await CreatePlayerAccountAsync(player);
-                }
-
+                
 				await account.SyncBalanceAsync();
 			}
 		}

@@ -43,19 +43,13 @@ namespace Wolfje.Plugins.SEconomy {
 		/// synch object for access to the dictionary.  You MUST obtain 
         /// a mutex through this object to access the dictionary member.
 		/// </summary>
-		protected readonly object __dictionaryLock = new object();
+		protected readonly object __dictionaryMutex = new object();
 
 		/// <summary>
 		/// synch object for access to the pvp dictionary.  You MUST obtain
         /// a mutex through this object to access the dictionary member.
 		/// </summary>
-		protected readonly object __pvpLock = new object();
-
-		/// <summary>
-		/// Synch object for access to the packet handler critical sections,
-        /// forcing packets to be marshalled in a serialized manner.
-		/// </summary>
-		protected readonly object __packetHandlerMutex = new object();
+		protected readonly object __pvpDictMutex = new object();
 
 		/// <summary>
 		/// Synch object for NPC damage, forcing NPC damages to be serialized
@@ -113,36 +107,39 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Adds damage done by a player to an NPC slot.  When the NPC dies the rewards for it will fill out.
 		/// </summary>
-		protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage, bool crit = false)
-		{
-			List<PlayerDamage> damageList = null;
-			PlayerDamage playerDamage = null;
-			double dmg;
+        protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage, bool crit = false)
+        {
+            List<PlayerDamage> damageList = null;
+            PlayerDamage playerDamage = null;
+            double dmg;
 
-			lock (__NPCDamageMutex) {
-				if (Player == null || NPC.active == false || NPC.life <= 0) {
-					return;
-				}
 
-				if (DamageDictionary.ContainsKey(NPC)) {
-					damageList = DamageDictionary[NPC];
-				} else {
-					damageList = new List<PlayerDamage>(1);
-					DamageDictionary.Add(NPC, damageList);
-				}
+            if (Player == null || NPC.active == false || NPC.life <= 0) {
+                return;
+            }
 
-				if ((playerDamage = damageList.FirstOrDefault(i => i.Player == Player)) == null) {
-					playerDamage = new PlayerDamage() { Player = Player };
-					damageList.Add(playerDamage);
-				}
+            lock (__dictionaryMutex) {
+                if (DamageDictionary.ContainsKey(NPC)) {
+                    damageList = DamageDictionary[NPC];
+                } else {
+                    damageList = new List<PlayerDamage>(1);
+                    DamageDictionary.Add(NPC, damageList);
+                }
+            }
 
-				if ((dmg = (crit ? 2 : 1) * Main.CalculateDamage(Damage, NPC.ichor ? NPC.defense - 20 : NPC.defense)) > NPC.life) {
-					dmg = NPC.life;
-				}
+            lock (__NPCDamageMutex) {
+                if ((playerDamage = damageList.FirstOrDefault(i => i.Player == Player)) == null) {
+                    playerDamage = new PlayerDamage() { Player = Player };
+                    damageList.Add(playerDamage);
+                }
 
-				playerDamage.Damage += dmg;
-			}
-		}
+                if ((dmg = (crit ? 2 : 1) * Main.CalculateDamage(Damage, NPC.ichor ? NPC.defense - 20 : NPC.defense)) > NPC.life) {
+                    dmg = NPC.life;
+                }
+            }
+
+            playerDamage.Damage += dmg;
+        }
 
 		/// <summary>
 		/// Should occur when an NPC dies; gives rewards out to all the players that hit it.
@@ -154,13 +151,15 @@ namespace Wolfje.Plugins.SEconomy {
             TSPlayer player;
 			Money rewardMoney = 0L;
 
-			if (DamageDictionary.ContainsKey(NPC)) {
-				playerDamageList = DamageDictionary[NPC];
+            lock (__dictionaryMutex) {
+                if (DamageDictionary.ContainsKey(NPC)) {
+                    playerDamageList = DamageDictionary[NPC];
 
-				if (DamageDictionary.Remove(NPC) == false) {
-					TShockAPI.Log.ConsoleError("seconomy: world economy: Remove of NPC after reward failed.  This is an internal error.");
-				}
-			}
+                    if (DamageDictionary.Remove(NPC) == false) {
+                        TShockAPI.Log.ConsoleError("seconomy: world economy: Remove of NPC after reward failed.  This is an internal error.");
+                    }
+                }
+            }
 
 			if (playerDamageList == null) {
 				return;
@@ -211,7 +210,7 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		protected void PlayerHitPlayer(int HitterSlot, int VictimSlot)
 		{
-			lock (__dictionaryLock) {
+            lock (__pvpDictMutex) {
 				if (PVPDamage.ContainsKey(VictimSlot)) {
 					PVPDamage[VictimSlot] = HitterSlot;
 				} else {
@@ -260,10 +259,9 @@ namespace Wolfje.Plugins.SEconomy {
                 playerToWorldTx = null;
             
 			//get the last hitter ID out of the dictionary
-			lock (__dictionaryLock) {
+			lock (__pvpDictMutex) {
 				if (PVPDamage.ContainsKey(DeadPlayerSlot)) {
 					lastHitterSlot = PVPDamage[DeadPlayerSlot];
-
 					PVPDamage.Remove(DeadPlayerSlot);
 				}
 			}
@@ -308,36 +306,34 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Occurs when the server has received a message from the client.
 		/// </summary>
-		protected void NetHooks_GetData(GetDataEventArgs args)
-		{
-			byte[] bufferSegment = null;
-			Terraria.Player player = null;
+        protected void NetHooks_GetData(GetDataEventArgs args)
+        {
+            byte[] bufferSegment = null;
+            Terraria.Player player = null;
 
-			if ((player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
-				return;
-			}
+            if ((player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
+                return;
+            }
 
-			bufferSegment = new byte[args.Length];
-			System.Array.Copy(args.Msg.readBuffer, args.Index, bufferSegment, 0, args.Length);
+            bufferSegment = new byte[args.Length];
+            System.Array.Copy(args.Msg.readBuffer, args.Index, bufferSegment, 0, args.Length);
 
-			lock (__packetHandlerMutex) {
-				if (args.MsgID == PacketTypes.NpcStrike) {
-					Terraria.NPC npc = null;
-					Packets.DamageNPC dmgPacket = Packets.PacketMarshal.MarshalFromBuffer<Packets.DamageNPC>(bufferSegment);
+            if (args.MsgID == PacketTypes.NpcStrike) {
+                Terraria.NPC npc = null;
+                Packets.DamageNPC dmgPacket = Packets.PacketMarshal.MarshalFromBuffer<Packets.DamageNPC>(bufferSegment);
 
-					if (dmgPacket.NPCID < 0 || dmgPacket.NPCID > Terraria.Main.npc.Length
-						|| args.Msg.whoAmI < 0 || dmgPacket.NPCID > Terraria.Main.player.Length) {
-						return;
-					}
+                if (dmgPacket.NPCID < 0 || dmgPacket.NPCID > Terraria.Main.npc.Length
+                    || args.Msg.whoAmI < 0 || dmgPacket.NPCID > Terraria.Main.player.Length) {
+                    return;
+                }
 
-					if ((npc = Terraria.Main.npc.ElementAtOrDefault(dmgPacket.NPCID)) == null) {
-						return;
-					}
+                if ((npc = Terraria.Main.npc.ElementAtOrDefault(dmgPacket.NPCID)) == null) {
+                    return;
+                }
 
-					AddNPCDamage(npc, player, dmgPacket.Damage, Convert.ToBoolean(dmgPacket.CrititcalHit));
-				}
-			}
-		}
+                AddNPCDamage(npc, player, dmgPacket.Damage, Convert.ToBoolean(dmgPacket.CrititcalHit));
+            }
+        }
 
 		/// <summary>
 		/// Occurs when the server has a chunk of data to send
