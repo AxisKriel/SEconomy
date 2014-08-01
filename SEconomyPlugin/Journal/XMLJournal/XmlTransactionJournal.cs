@@ -29,6 +29,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 		internal static long _transactionSeed;
 
 		internal string path;
+
 		internal System.Timers.Timer JournalBackupTimer { get; set; }
 
 		public event EventHandler<PendingTransactionEventArgs> BankTransactionPending;
@@ -41,6 +42,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 		public readonly Version XmlSchemaVersion = new Version(1, 3, 0);
 
 		public bool JournalSaving { get; set; }
+
 		public bool BackupsEnabled { get; set; }
 
 		public XmlTransactionJournal(SEconomy Parent, string JournalSavePath)
@@ -81,10 +83,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 			if (Terraria.Main.worldID > 0) {
 				worldAccount = (from i in bankAccounts
-								where (i.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount
-								   && (i.Flags & Journal.BankAccountFlags.PluginAccount) == 0
-								   && i.WorldID == Terraria.Main.worldID
-								select i).FirstOrDefault();
+				                where (i.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount
+				                    && (i.Flags & Journal.BankAccountFlags.PluginAccount) == 0
+				                    && i.WorldID == Terraria.Main.worldID
+				                select i).FirstOrDefault();
 
 				//world account does not exist for this world ID, create one
 				if (worldAccount == null) {
@@ -138,6 +140,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 		public static readonly object __writeLock = new object();
 		private static readonly Random _rng = new Random();
 		private const string _chars = "1234567890abcdefghijklmnopqrstuvwxyz";
+
 		/// <summary>
 		/// Thread-safely generates a random sequence of characters
 		/// </summary>
@@ -163,26 +166,22 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			string journalTransComment = SEconomyPlugin.Locale.StringOrDefault(64);
 
 			return new XDocument(new XDeclaration("1.0", "utf-8", "yes"),
-								 new XComment(journalComment),
-											new XElement("Journal",
-												new XAttribute("Schema", new Version(1, 3, 0).ToString()),
-												new XElement("BankAccounts", new XComment(journalAccountComment))
-											));
+				new XComment(journalComment),
+				new XElement("Journal",
+					new XAttribute("Schema", new Version(1, 3, 0).ToString()),
+					new XElement("BankAccounts", new XComment(journalAccountComment))
+				));
 
 		}
 
-		public List<IBankAccount> BankAccounts
-		{
-			get
-			{
+		public List<IBankAccount> BankAccounts {
+			get {
 				return bankAccounts;
 			}
 		}
 
-		public IEnumerable<ITransaction> Transactions
-		{
-			get
-			{
+		public IEnumerable<ITransaction> Transactions {
+			get {
 				return bankAccounts.SelectMany(i => i.Transactions);
 			}
 		}
@@ -209,17 +208,17 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 		public IBankAccount GetBankAccountByName(string UserAccountName)
 		{
-            if (bankAccounts == null) {
-                return null;
-            }
+			if (bankAccounts == null) {
+				return null;
+			}
 			return bankAccounts.FirstOrDefault(i => i.UserAccountName == UserAccountName);
 		}
 
 		public IBankAccount GetBankAccount(long BankAccountK)
 		{
-            if (bankAccounts == null) {
-                return null;
-            }
+			if (bankAccounts == null) {
+				return null;
+			}
 
 			for (int i = 0; i < bankAccounts.Count; ++i) {
 				IBankAccount acct = bankAccounts[i];
@@ -234,9 +233,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 		public IEnumerable<IBankAccount> GetBankAccountList(long BankAccountK)
 		{
-            if (bankAccounts == null) {
-                return null;
-            }
+			if (bankAccounts == null) {
+				return null;
+			}
 			return BankAccounts.Where(i => i.BankAccountK == BankAccountK);
 		}
 
@@ -245,8 +244,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			StringBuilder sb = new StringBuilder();
 
 			var qAccounts = from i in bankAccounts
-							group i by i.BankAccountK into g
-							select new {
+			                group i by i.BankAccountK into g
+			                select new {
 								name = g.Key,
 								count = g.Count()
 							};
@@ -261,9 +260,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 		public void DeleteBankAccount(long BankAccountK)
 		{
-            if (bankAccounts == null) {
-                return;
-            }
+			if (bankAccounts == null) {
+				return;
+			}
 			bankAccounts.RemoveAll(i => i.BankAccountK == BankAccountK);
 		}
 
@@ -383,7 +382,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 			try {
 				byte[] fileData = new byte[0];
-			initPoint:
+				initPoint:
 				try {
 					fileData = File.ReadAllBytes(path);
 				} catch (Exception ex) {
@@ -474,7 +473,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 								}
 							}
 
-                            account.SyncBalance();
+							account.SyncBalance();
 
 							if (oldPercent != (int)percentComplete) {
 								parsingArgs.Percent = (int)percentComplete;
@@ -494,9 +493,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 						//delete transactions with duplicate IDs
 
 						var qAccounts = from summary in bankAccounts
-										group summary by summary.BankAccountK into g
-										where g.Count() > 1
-										select new {
+						                group summary by summary.BankAccountK into g
+						                where g.Count() > 1
+						                select new {
 											name = g.Key,
 											count = g.Count()
 										};
@@ -659,16 +658,16 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			//abandon the old journal and assign the squashed one
 			Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(82, "re-syncing online accounts."));
 
-            foreach (TSPlayer player in TShockAPI.TShock.Players) {
-                IBankAccount account = null;
-                if (player == null
-                    || SEconomyPlugin.Instance == null
-                    || (account = SEconomyPlugin.Instance.GetBankAccount(player)) == null) {
-                    return;
-                }
-                Console.WriteLine("re-syncing {0}", player.Name);
-                await account.SyncBalanceAsync();
-            }
+			foreach (TSPlayer player in TShockAPI.TShock.Players) {
+				IBankAccount account = null;
+				if (player == null
+				    || SEconomyPlugin.Instance == null
+				    || (account = SEconomyPlugin.Instance.GetBankAccount(player)) == null) {
+					return;
+				}
+				Console.WriteLine("re-syncing {0}", player.Name);
+				await account.SyncBalanceAsync();
+			}
 
 			await SaveJournalAsync();
 			if (responsibleForTurningBackupsBackOn) {
@@ -748,9 +747,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 						BankTransactionPending(this, pendingTransaction);
 					}
 
-                    if (pendingTransaction == null) {
-                        return args;
-                    }
+					if (pendingTransaction == null) {
+						return args;
+					}
 
 					args.Amount = pendingTransaction.Amount;
 					args.SenderAccount = pendingTransaction.FromAccount;
@@ -786,11 +785,11 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 					}
 				} else {
 					args.TransferSucceeded = false;
-                    TSPlayer from;
+					TSPlayer from;
 
-                    if ((from = TShockAPI.TShock.Players.FirstOrDefault(i => i.UserAccountName == FromAccount.UserAccountName)) == null) {
-                        return args;
-                    }
+					if ((from = TShockAPI.TShock.Players.FirstOrDefault(i => i.UserAccountName == FromAccount.UserAccountName)) == null) {
+						return args;
+					}
 
 
 					/*

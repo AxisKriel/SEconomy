@@ -5,8 +5,8 @@ using System.Text;
 using Wolfje.Plugins.SEconomy.Journal;
 
 namespace Wolfje.Plugins.SEconomy {
-    public static class ConsoleEx {
-        static readonly object __consoleWriteLock = new object();
+	public static class ConsoleEx {
+		static readonly object __consoleWriteLock = new object();
 
 		public static void WriteBar(JournalLoadingPercentChangedEventArgs args)
 		{
@@ -88,5 +88,5 @@ namespace Wolfje.Plugins.SEconomy {
 			}
 		}
 
-    }
+	}
 }

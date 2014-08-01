@@ -74,21 +74,24 @@ namespace Wolfje.Plugins.SEconomy.Forms {
 		void SetMoneyInputState(MoneyParseState state, TextBox Control)
 		{
 			switch (state) {
-				case MoneyParseState.Indeterminate: {
-						Control.ForeColor = System.Drawing.Color.Black;
-						// Control.BackColor = System.Drawing.Color.White;
-					}
-					break;
-				case MoneyParseState.Invalid: {
-						Control.ForeColor = System.Drawing.Color.Red;
-						// Control.BackColor = System.Drawing.Color.FromArgb(255, 240, 240);
-					}
-					break;
-				case MoneyParseState.Valid: {
-						Control.ForeColor = System.Drawing.Color.Green;
-						//    Control.BackColor = System.Drawing.Color.FromArgb(223, 255, 240);
-					}
-					break;
+			case MoneyParseState.Indeterminate:
+				{
+					Control.ForeColor = System.Drawing.Color.Black;
+					// Control.BackColor = System.Drawing.Color.White;
+				}
+				break;
+			case MoneyParseState.Invalid:
+				{
+					Control.ForeColor = System.Drawing.Color.Red;
+					// Control.BackColor = System.Drawing.Color.FromArgb(255, 240, 240);
+				}
+				break;
+			case MoneyParseState.Valid:
+				{
+					Control.ForeColor = System.Drawing.Color.Green;
+					//    Control.BackColor = System.Drawing.Color.FromArgb(223, 255, 240);
+				}
+				break;
 			}
 		}
 
@@ -153,7 +156,7 @@ namespace Wolfje.Plugins.SEconomy.Forms {
 			}
 
 			if (MessageBox.Show(string.Format("Really set {0}'s balance to {1}?", account.UserAccountName, money.ToLongString()),
-				"Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == System.Windows.Forms.DialogResult.Yes) {
+				    "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == System.Windows.Forms.DialogResult.Yes) {
 				await SetBalanceToAsync(money);
 			} else {
 				this.Hide();

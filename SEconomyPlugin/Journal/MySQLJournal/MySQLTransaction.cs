@@ -18,7 +18,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		public long BankAccountTransactionK { get; set; }
 
 		public long BankAccountFK { get; set; }
+
 		public Money Amount { get; set; }
+
 		public string Message { get; set; }
 
 		public BankAccountTransactionFlags Flags { get; set; }
@@ -29,18 +31,15 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public long BankAccountTransactionFK { get; set; }
 
-		public IBankAccount BankAccount
-		{
+		public IBankAccount BankAccount {
 			get { return bankAccount; }
 		}
 
-		public ITransaction OppositeTransaction
-		{
+		public ITransaction OppositeTransaction {
 			get { return null; }
 		}
 
-		public Dictionary<string, object> CustomValues
-		{
+		public Dictionary<string, object> CustomValues {
 			get { return null; }
 		}
 

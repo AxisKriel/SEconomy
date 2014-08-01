@@ -1,4 +1,4 @@
-﻿ using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +12,7 @@ using System.Reflection;
 namespace Wolfje.Plugins.SEconomy.Lang {
 	public class Localization {
 		public string Locale { get; protected set; }
+
 		public string[] StringTable { get; protected set; }
 
 		public Localization(string Locale)
@@ -33,10 +34,10 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 				string fileName = null;
 				Match fileMatch = null;
 
-				if (resourceName.EndsWith(".xml") == false 
-					|| resourceRegex.IsMatch(resourceName) == false
-					|| (fileMatch = resourceRegex.Match(resourceName)) == null
-					|| (fileName = fileMatch.Groups[1].Value) == null) {
+				if (resourceName.EndsWith(".xml") == false
+				    || resourceRegex.IsMatch(resourceName) == false
+				    || (fileMatch = resourceRegex.Match(resourceName)) == null
+				    || (fileName = fileMatch.Groups[1].Value) == null) {
 					continue;
 				}
 
@@ -58,8 +59,8 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 		public string StringOrDefault(int index, string defaultText = "")
 		{
 			string target = null;
-			if (this.StringTable == null 
-				|| (target = this.StringTable.ElementAtOrDefault(index)) == null) {
+			if (this.StringTable == null
+			    || (target = this.StringTable.ElementAtOrDefault(index)) == null) {
 				target = defaultText;
 			}
 

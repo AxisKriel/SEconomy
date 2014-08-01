@@ -20,8 +20,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		#region IBankAccount Members
 
-		public ITransactionJournal OwningJournal
-		{
+		public ITransactionJournal OwningJournal {
 			get { return journal; }
 		}
 
@@ -39,28 +38,23 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public Money Balance { get; set; }
 
-		public bool IsAccountEnabled
-		{
+		public bool IsAccountEnabled {
 			get { return (this.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled; }
 		}
 
-		public bool IsSystemAccount
-		{
+		public bool IsSystemAccount {
 			get { return (this.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount; }
 		}
 
-		public bool IsLockedToWorld
-		{
+		public bool IsLockedToWorld {
 			get { return (this.Flags & Journal.BankAccountFlags.LockedToWorld) == Journal.BankAccountFlags.LockedToWorld; }
 		}
 
-		public bool IsPluginAccount
-		{
+		public bool IsPluginAccount {
 			get { return (this.Flags & Journal.BankAccountFlags.PluginAccount) == Journal.BankAccountFlags.PluginAccount; }
 		}
 
-		public List<ITransaction> Transactions
-		{
+		public List<ITransaction> Transactions {
 			get {
 				List<ITransaction> tranList = new List<ITransaction>();
 
@@ -97,6 +91,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				TShockAPI.Log.ConsoleError(" seconomy mysql: MySQL command error in ResetAccountTransactions");
 			}
 		}
+
 		public async Task ResetAccountTransactionsAsync(long BankAccountK)
 		{
 			await Task.Run(() => ResetAccountTransactions(BankAccountK));
@@ -137,12 +132,12 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public async Task<BankTransferEventArgs> TransferToAsync(int Index, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)
 		{
-            IBankAccount account;
+			IBankAccount account;
 
-            if (SEconomyPlugin.Instance == null
-                || (account = SEconomyPlugin.Instance.GetBankAccount(Index)) == null) {
-                return null;
-            }
+			if (SEconomyPlugin.Instance == null
+			    || (account = SEconomyPlugin.Instance.GetBankAccount(Index)) == null) {
+				return null;
+			}
 
 			return await Task.Factory.StartNew(() => TransferTo(account, Amount, Options, TransactionMessage, JournalMessage));
 		}

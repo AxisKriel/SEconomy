@@ -27,14 +27,13 @@ namespace Wolfje.Plugins.SEconomy.Extensions {
 				return moveNext();
 			}
 
-			public T Current
-			{
+			public T Current {
 				get { return current(); }
 			}
 		}
 
 		private static IEnumerable<T> BuildEnumerable<T>(
-				Func<bool> moveNext, Func<T> current)
+			Func<bool> moveNext, Func<T> current)
 		{
 			var po = new EnumeratorWrapper<T>(moveNext, current);
 			foreach (var s in po)

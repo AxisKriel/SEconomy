@@ -3,8 +3,8 @@
 
 Update 15
 
-[+] Added polygamy support to SEconomy
-[+] Added disposable support to all components
+[+] Added polygamy support to SEconomy, unload, start and reload support
+[+] Added disposable support to all subsystems
 [+] New command: /sec[onomy] rl|reload: Completely shuts down and refreshes SEconomy
 [+] New command: /sec[onomy] stop: Stops and unloads SEconomy
 [+] New command: /sec[onomy] stop: Starts a new instance of SEconomy
@@ -12,17 +12,20 @@ Update 15
 [+] Localization support
 [+] en-AU language
 [+] MySQL journal support, supports writing of the journal in an SQL database
+[+] MySQL journal squashing support
 [+] Static rewards for PVP kills
 [+] Override support for static rewards for PvP kills based on TShock group
 [+] XML2SQL.exe: migrate your XML journal file to an SQL table
 [+] localeviewer.exe: localisation viewer program called localeviewer.exe for translators
 [+] JS function: acmd_cooldown_reset(player, alias): resets the cooldown in a script
 [+] JS function: acmd_cooldown_set(player, alias, secs): overrides the cooldown in a script
+[+] WorldEconomy now supports a custom multiplier, set from 0-100 with /sec multi <multiplier>
 [-] Removed old EPRS database import code
 [-] Removed old dead profiler code
 [-] Removed most static members in SEconomy plugin
 [-] Removed TSPlayer extensions as they now feature in TShock itself
 [-] Removed /bank enable|disable because it has forever done nothing and nobody even cares
+[-] EconomyPlayer has been removed, and the GetEconomyPlayerSafe methods are deprecated
 [c] Changed most ContinueWith delegates to awaits in .net 4.5
 [c] Rewrote Configuration interface
 [c] WorldEconomy now does not hand out more rewards than a mob's health

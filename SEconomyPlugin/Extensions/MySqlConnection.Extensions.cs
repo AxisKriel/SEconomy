@@ -47,65 +47,65 @@ namespace Wolfje.Plugins.SEconomy.Extensions {
 
 		public static IDataReader QueryReaderExisting(this IDbConnection db, string query, params object[] args)
 		{
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            IDataReader reader = null;
+			Stopwatch sw = new Stopwatch();
+			sw.Start();
+			IDataReader reader = null;
 
 			using (var com = db.CreateCommand()) {
 				com.CommandText = query;
-                com.CommandTimeout = 60;
+				com.CommandTimeout = 60;
 
 				for (int i = 0; i < args.Length; i++)
 					com.AddParameter("@" + i, args[i]);
 
-                try {
-                    reader = com.ExecuteReader();
-                } catch (Exception ex) {
-                    TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
+				try {
+					reader = com.ExecuteReader();
+				} catch (Exception ex) {
+					TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
                     
 					if (reader != null) {
 						reader.Dispose();
 					}
-                }
+				}
 			}
 
-            sw.Stop();
-            if (sw.Elapsed.TotalSeconds > 10) {
-                TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
-            }
+			sw.Stop();
+			if (sw.Elapsed.TotalSeconds > 10) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
+			}
 
-            return reader;
+			return reader;
 		}
 
 		public static int QueryTransaction(this IDbConnection db, IDbTransaction trans, string query, params object[] args)
 		{
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            int r = 0;
+			Stopwatch sw = new Stopwatch();
+			sw.Start();
+			int r = 0;
 
 			using (var com = db.CreateCommand()) {
 				com.CommandText = query;
 				com.Transaction = trans;
-                com.CommandTimeout = 60;
+				com.CommandTimeout = 60;
 
 				for (int i = 0; i < args.Length; i++) {
 					com.AddParameter("@" + i, args[i]);
 				}
 
-                try {
-                    r = com.ExecuteNonQuery();
-                } catch(Exception ex) {
-                    TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
-                    r = -1;
-                }
+				try {
+					r = com.ExecuteNonQuery();
+				} catch (Exception ex) {
+					TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
+					r = -1;
+				}
 			}
 
-            sw.Stop();
-            if (sw.Elapsed.TotalSeconds > 10) {
-                TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
-            }
+			sw.Stop();
+			if (sw.Elapsed.TotalSeconds > 10) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
+			}
 
-            return r;
+			return r;
 		}
 
 		/// <summary>
@@ -118,10 +118,10 @@ namespace Wolfje.Plugins.SEconomy.Extensions {
 		[SuppressMessage("Microsoft.Security", "CA2100:Review SQL queries for security vulnerabilities")]
 		public static int QueryIdentity(this MySql.Data.MySqlClient.MySqlConnection olddb, string query, out long identity, params object[] args)
 		{
-            Stopwatch sw = new Stopwatch();
-            int affected = 0;
-            sw.Start();
-            identity = -1;
+			Stopwatch sw = new Stopwatch();
+			int affected = 0;
+			sw.Start();
+			identity = -1;
 
 			using (var db = new MySql.Data.MySqlClient.MySqlConnection(olddb.ConnectionString)) {
 				try {
@@ -142,43 +142,43 @@ namespace Wolfje.Plugins.SEconomy.Extensions {
 				}
 			}
 
-            sw.Stop();
-            if (sw.Elapsed.TotalSeconds > 10) {
-                TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
-            }
+			sw.Stop();
+			if (sw.Elapsed.TotalSeconds > 10) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
+			}
 
-            return affected;
+			return affected;
 		}
 
 		public static int QueryIdentityTransaction(this MySql.Data.MySqlClient.MySqlConnection db, MySql.Data.MySqlClient.MySqlTransaction trans, string query, out long identity, params object[] args)
 		{
-            Stopwatch sw = new Stopwatch();
-            int affected = 0;
-            sw.Start();
+			Stopwatch sw = new Stopwatch();
+			int affected = 0;
+			sw.Start();
 
 			using (var com = db.CreateCommand()) {
 				com.CommandText = query;
 				com.Transaction = trans;
-                com.CommandTimeout = 60;
+				com.CommandTimeout = 60;
 
 				for (int i = 0; i < args.Length; i++)
 					com.AddParameter("@" + i, args[i]);
 
-                try {
-                    affected = com.ExecuteNonQuery();
-                } catch (Exception ex) {
-                    TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
-                    affected = -1;
-                }
+				try {
+					affected = com.ExecuteNonQuery();
+				} catch (Exception ex) {
+					TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
+					affected = -1;
+				}
 				identity = com.LastInsertedId;
 			}
 
-            sw.Stop();
-            if (sw.Elapsed.TotalSeconds > 10) {
-                TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
-            }
+			sw.Stop();
+			if (sw.Elapsed.TotalSeconds > 10) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
+			}
 
-            return affected;
+			return affected;
 		}
 
 		/// <summary>
@@ -228,70 +228,70 @@ namespace Wolfje.Plugins.SEconomy.Extensions {
 
 		public static T QueryScalarExisting<T>(this IDbConnection db, string query, params object[] args)
 		{
-            Stopwatch sw = new Stopwatch();
-            object result = null;
-            sw.Start();
+			Stopwatch sw = new Stopwatch();
+			object result = null;
+			sw.Start();
 
 			using (var com = db.CreateCommand()) {
 				com.CommandText = query;
-                com.CommandTimeout = 60;
+				com.CommandTimeout = 60;
 
 				for (int i = 0; i < args.Length; i++) {
 					com.AddParameter("@" + i, args[i]);
 				}
 
-                try {
-                    if ((result = com.ExecuteScalar()) == null) {
-                        sw.Stop();
-                        return default(T);
-                    }
-                } catch (Exception ex) {
-                    TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
-                    result = default(T);
-                }
+				try {
+					if ((result = com.ExecuteScalar()) == null) {
+						sw.Stop();
+						return default(T);
+					}
+				} catch (Exception ex) {
+					TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
+					result = default(T);
+				}
 			}
 
-            sw.Stop();
-            if (sw.Elapsed.TotalSeconds > 10) {
-                TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", 
+			sw.Stop();
+			if (sw.Elapsed.TotalSeconds > 10) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", 
 					sw.Elapsed.TotalSeconds);
-                result = default(T);
-            }
+				result = default(T);
+			}
 
-            return (T)result;
+			return (T)result;
 		}
 
 		public static T QueryScalarTransaction<T>(this IDbConnection db, IDbTransaction trans, string query, params object[] args)
 		{
-            Stopwatch sw = new Stopwatch();
-            object result = null;
-            sw.Start();
+			Stopwatch sw = new Stopwatch();
+			object result = null;
+			sw.Start();
 
 			using (var com = db.CreateCommand()) {
 				com.CommandText = query;
 				com.Transaction = trans;
-                com.CommandTimeout = 60;
+				com.CommandTimeout = 60;
 
 				for (int i = 0; i < args.Length; i++) {
 					com.AddParameter("@" + i, args[i]);
 				}
 
-                try {
-                    if ((result = com.ExecuteScalar()) == null) {
-                        return default(T);
-                    }
-                } catch (Exception ex) {
-                    TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
-                    result = default(T);
-                }
+				try {
+					if ((result = com.ExecuteScalar()) == null) {
+						return default(T);
+					}
+				} catch (Exception ex) {
+					TShockAPI.Log.ConsoleError("seconomy mysql: Query error: {0}", ex.Message);
+					result = default(T);
+				}
 			}
 
-            sw.Stop();
-            if (sw.Elapsed.TotalSeconds > 10) {
-                TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
-            }
+			sw.Stop();
+			if (sw.Elapsed.TotalSeconds > 10) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: Your MySQL server took {0} seconds to respond!\r\nConsider squashing your journal.", sw.Elapsed.TotalSeconds);
+			}
 
-            return (T)result;
+			return (T)result;
 		}
 	}
 }

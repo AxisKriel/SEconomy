@@ -13,17 +13,17 @@ namespace Wolfje.Plugins.SEconomy {
 
 	/// <summary>
 	/// World economy. Provides monetary gain and loss as a 
-    /// result of interaction in the world, including mobs 
-    /// and players.
+	/// result of interaction in the world, including mobs 
+	/// and players.
 	/// </summary>
 	public class WorldEconomy : IDisposable {
 		protected SEconomy Parent { get; set; }
 
-        /// <summary>
-        /// Gets or sets a multiplier for mob kills and deaths
-        /// after calculation.
-        /// </summary>
-        public int CustomMultiplier { get; set; }
+		/// <summary>
+		/// Gets or sets a multiplier for mob kills and deaths
+		/// after calculation.
+		/// </summary>
+		public int CustomMultiplier { get; set; }
 
 		/// <summary>
 		/// Format for this dictionary:
@@ -41,13 +41,13 @@ namespace Wolfje.Plugins.SEconomy {
 
 		/// <summary>
 		/// synch object for access to the dictionary.  You MUST obtain 
-        /// a mutex through this object to access the dictionary member.
+		/// a mutex through this object to access the dictionary member.
 		/// </summary>
 		protected readonly object __dictionaryMutex = new object();
 
 		/// <summary>
 		/// synch object for access to the pvp dictionary.  You MUST obtain
-        /// a mutex through this object to access the dictionary member.
+		/// a mutex through this object to access the dictionary member.
 		/// </summary>
 		protected readonly object __pvpDictMutex = new object();
 
@@ -65,14 +65,14 @@ namespace Wolfje.Plugins.SEconomy {
 		public WorldEconomy(SEconomy parent)
 		{
 			this.WorldConfiguration = Configuration.WorldConfiguration.WorldConfig.LoadConfigurationFromFile(
-                "tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "SEconomy.WorldConfig.json");
+				"tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "SEconomy.WorldConfig.json");
 			this.Parent = parent;
 
 			ServerApi.Hooks.NetGetData.Register(Parent.PluginInstance, NetHooks_GetData);
 			ServerApi.Hooks.NetSendData.Register(Parent.PluginInstance, NetHooks_SendData);
 			ServerApi.Hooks.GameUpdate.Register(Parent.PluginInstance, Game_Update);
 
-            this.CustomMultiplier = 1;
+			this.CustomMultiplier = 1;
 		}
 
 		public void Dispose()
@@ -104,42 +104,43 @@ namespace Wolfje.Plugins.SEconomy {
 		}
 
 		#region "NPC Reward handling"
+
 		/// <summary>
 		/// Adds damage done by a player to an NPC slot.  When the NPC dies the rewards for it will fill out.
 		/// </summary>
-        protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage, bool crit = false)
-        {
-            List<PlayerDamage> damageList = null;
-            PlayerDamage playerDamage = null;
-            double dmg;
+		protected void AddNPCDamage(Terraria.NPC NPC, Terraria.Player Player, int Damage, bool crit = false)
+		{
+			List<PlayerDamage> damageList = null;
+			PlayerDamage playerDamage = null;
+			double dmg;
 
 
-            if (Player == null || NPC.active == false || NPC.life <= 0) {
-                return;
-            }
+			if (Player == null || NPC.active == false || NPC.life <= 0) {
+				return;
+			}
 
-            lock (__dictionaryMutex) {
-                if (DamageDictionary.ContainsKey(NPC)) {
-                    damageList = DamageDictionary[NPC];
-                } else {
-                    damageList = new List<PlayerDamage>(1);
-                    DamageDictionary.Add(NPC, damageList);
-                }
-            }
+			lock (__dictionaryMutex) {
+				if (DamageDictionary.ContainsKey(NPC)) {
+					damageList = DamageDictionary[NPC];
+				} else {
+					damageList = new List<PlayerDamage>(1);
+					DamageDictionary.Add(NPC, damageList);
+				}
+			}
 
-            lock (__NPCDamageMutex) {
-                if ((playerDamage = damageList.FirstOrDefault(i => i.Player == Player)) == null) {
-                    playerDamage = new PlayerDamage() { Player = Player };
-                    damageList.Add(playerDamage);
-                }
+			lock (__NPCDamageMutex) {
+				if ((playerDamage = damageList.FirstOrDefault(i => i.Player == Player)) == null) {
+					playerDamage = new PlayerDamage() { Player = Player };
+					damageList.Add(playerDamage);
+				}
 
-                if ((dmg = (crit ? 2 : 1) * Main.CalculateDamage(Damage, NPC.ichor ? NPC.defense - 20 : NPC.defense)) > NPC.life) {
-                    dmg = NPC.life;
-                }
-            }
+				if ((dmg = (crit ? 2 : 1) * Main.CalculateDamage(Damage, NPC.ichor ? NPC.defense - 20 : NPC.defense)) > NPC.life) {
+					dmg = NPC.life;
+				}
+			}
 
-            playerDamage.Damage += dmg;
-        }
+			playerDamage.Damage += dmg;
+		}
 
 		/// <summary>
 		/// Should occur when an NPC dies; gives rewards out to all the players that hit it.
@@ -147,19 +148,19 @@ namespace Wolfje.Plugins.SEconomy {
 		protected void GiveRewardsForNPC(Terraria.NPC NPC)
 		{
 			List<PlayerDamage> playerDamageList = null;
-            IBankAccount account;
-            TSPlayer player;
+			IBankAccount account;
+			TSPlayer player;
 			Money rewardMoney = 0L;
 
-            lock (__dictionaryMutex) {
-                if (DamageDictionary.ContainsKey(NPC)) {
-                    playerDamageList = DamageDictionary[NPC];
+			lock (__dictionaryMutex) {
+				if (DamageDictionary.ContainsKey(NPC)) {
+					playerDamageList = DamageDictionary[NPC];
 
-                    if (DamageDictionary.Remove(NPC) == false) {
-                        TShockAPI.Log.ConsoleError("seconomy: world economy: Remove of NPC after reward failed.  This is an internal error.");
-                    }
-                }
-            }
+					if (DamageDictionary.Remove(NPC) == false) {
+						TShockAPI.Log.ConsoleError("seconomy: world economy: Remove of NPC after reward failed.  This is an internal error.");
+					}
+				}
+			}
 
 			if (playerDamageList == null) {
 				return;
@@ -168,8 +169,8 @@ namespace Wolfje.Plugins.SEconomy {
 			if ((NPC.boss && WorldConfiguration.MoneyFromBossEnabled) || (!NPC.boss && WorldConfiguration.MoneyFromNPCEnabled)) {
 				foreach (PlayerDamage damage in playerDamageList) {
 					if (damage.Player == null
-                        || (player = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == damage.Player.whoAmi)) == null
-                        || (account = Parent.GetBankAccount(player)) == null) {
+					    || (player = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == damage.Player.whoAmi)) == null
+					    || (account = Parent.GetBankAccount(player)) == null) {
 						continue;
 					}
 
@@ -210,7 +211,7 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		protected void PlayerHitPlayer(int HitterSlot, int VictimSlot)
 		{
-            lock (__pvpDictMutex) {
+			lock (__pvpDictMutex) {
 				if (PVPDamage.ContainsKey(VictimSlot)) {
 					PVPDamage[VictimSlot] = HitterSlot;
 				} else {
@@ -222,20 +223,20 @@ namespace Wolfje.Plugins.SEconomy {
 		protected Money GetDeathPenalty(TSPlayer player)
 		{
 			Money penalty = 0L;
-            IBankAccount account;
+			IBankAccount account;
 			StaticPenaltyOverride rewardOverride;
 
-            if (Parent == null
-                || (account = Parent.GetBankAccount(player)) == null) {
-                    return default(Money);
-            }
+			if (Parent == null
+			    || (account = Parent.GetBankAccount(player)) == null) {
+				return default(Money);
+			}
 
 			if (WorldConfiguration.StaticDeathPenalty == false) {
 				//The penalty defaults to a percentage of the players' current balance.
-                return (long)Math.Round(Convert.ToDouble(account.Balance.Value) 
-					* (Convert.ToDouble(WorldConfiguration.DeathPenaltyPercentValue) 
-					* Math.Pow(10, -2))
-                    * CustomMultiplier);
+				return (long)Math.Round(Convert.ToDouble(account.Balance.Value)
+				* (Convert.ToDouble(WorldConfiguration.DeathPenaltyPercentValue)
+				* Math.Pow(10, -2))
+				* CustomMultiplier);
 			}
 
 			penalty = WorldConfiguration.StaticPenaltyAmount;
@@ -251,12 +252,12 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		protected void ProcessDeath(int DeadPlayerSlot, bool PVPDeath)
 		{
-            TSPlayer murderer = null, murdered = null;
-            IBankAccount murderedAccount, murdererAccount;
-            Money penalty = default(Money);
-            int lastHitterSlot = default(int);
-            Journal.CachedTransaction worldToPlayerTx = null,
-                playerToWorldTx = null;
+			TSPlayer murderer = null, murdered = null;
+			IBankAccount murderedAccount, murdererAccount;
+			Money penalty = default(Money);
+			int lastHitterSlot = default(int);
+			Journal.CachedTransaction worldToPlayerTx = null,
+			playerToWorldTx = null;
             
 			//get the last hitter ID out of the dictionary
 			lock (__pvpDictMutex) {
@@ -267,9 +268,9 @@ namespace Wolfje.Plugins.SEconomy {
 			}
 
 			if ((murdered = TShockAPI.TShock.Players.ElementAtOrDefault(DeadPlayerSlot)) == null
-				|| murdered.Group.HasPermission("seconomy.world.bypassdeathpenalty") == true
-				|| (murderedAccount = Parent.GetBankAccount(murdered)) == null
-				|| (penalty = GetDeathPenalty(murdered)) == 0) {
+			    || murdered.Group.HasPermission("seconomy.world.bypassdeathpenalty") == true
+			    || (murderedAccount = Parent.GetBankAccount(murdered)) == null
+			    || (penalty = GetDeathPenalty(murdered)) == 0) {
 				return;
 			}
 
@@ -286,8 +287,8 @@ namespace Wolfje.Plugins.SEconomy {
 
 			//but if it's a PVP death, the killer gets the losers penalty if enabled
 			if (PVPDeath && WorldConfiguration.MoneyFromPVPEnabled && WorldConfiguration.KillerTakesDeathPenalty) {
-                if ((murderer = TShockAPI.TShock.Players.ElementAtOrDefault(lastHitterSlot)) == null
-					|| (murdererAccount = Parent.GetBankAccount(murderer)) == null) {
+				if ((murderer = TShockAPI.TShock.Players.ElementAtOrDefault(lastHitterSlot)) == null
+				    || (murdererAccount = Parent.GetBankAccount(murderer)) == null) {
 					return;
 				}
 				
@@ -306,34 +307,34 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Occurs when the server has received a message from the client.
 		/// </summary>
-        protected void NetHooks_GetData(GetDataEventArgs args)
-        {
-            byte[] bufferSegment = null;
-            Terraria.Player player = null;
+		protected void NetHooks_GetData(GetDataEventArgs args)
+		{
+			byte[] bufferSegment = null;
+			Terraria.Player player = null;
 
-            if ((player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
-                return;
-            }
+			if ((player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
+				return;
+			}
 
-            bufferSegment = new byte[args.Length];
-            System.Array.Copy(args.Msg.readBuffer, args.Index, bufferSegment, 0, args.Length);
+			bufferSegment = new byte[args.Length];
+			System.Array.Copy(args.Msg.readBuffer, args.Index, bufferSegment, 0, args.Length);
 
-            if (args.MsgID == PacketTypes.NpcStrike) {
-                Terraria.NPC npc = null;
-                Packets.DamageNPC dmgPacket = Packets.PacketMarshal.MarshalFromBuffer<Packets.DamageNPC>(bufferSegment);
+			if (args.MsgID == PacketTypes.NpcStrike) {
+				Terraria.NPC npc = null;
+				Packets.DamageNPC dmgPacket = Packets.PacketMarshal.MarshalFromBuffer<Packets.DamageNPC>(bufferSegment);
 
-                if (dmgPacket.NPCID < 0 || dmgPacket.NPCID > Terraria.Main.npc.Length
-                    || args.Msg.whoAmI < 0 || dmgPacket.NPCID > Terraria.Main.player.Length) {
-                    return;
-                }
+				if (dmgPacket.NPCID < 0 || dmgPacket.NPCID > Terraria.Main.npc.Length
+				    || args.Msg.whoAmI < 0 || dmgPacket.NPCID > Terraria.Main.player.Length) {
+					return;
+				}
 
-                if ((npc = Terraria.Main.npc.ElementAtOrDefault(dmgPacket.NPCID)) == null) {
-                    return;
-                }
+				if ((npc = Terraria.Main.npc.ElementAtOrDefault(dmgPacket.NPCID)) == null) {
+					return;
+				}
 
-                AddNPCDamage(npc, player, dmgPacket.Damage, Convert.ToBoolean(dmgPacket.CrititcalHit));
-            }
-        }
+				AddNPCDamage(npc, player, dmgPacket.Damage, Convert.ToBoolean(dmgPacket.CrititcalHit));
+			}
+		}
 
 		/// <summary>
 		/// Occurs when the server has a chunk of data to send
@@ -355,7 +356,7 @@ namespace Wolfje.Plugins.SEconomy {
 			} catch {
 
 			}
-		} 
+		}
 	}
 
 	/// <summary>

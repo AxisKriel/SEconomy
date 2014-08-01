@@ -15,6 +15,7 @@ using TShockAPI;
 namespace Wolfje.Plugins.SEconomy.Forms {
 	public partial class CAccountManagementWnd : Form {
 		protected SEconomy SecInstance { get; set; }
+
 		protected IEnumerable<Journal.ITransaction> tranList;
 
 		private List<AccountSummary> sourceAccList = new List<AccountSummary>();
@@ -31,14 +32,14 @@ namespace Wolfje.Plugins.SEconomy.Forms {
 		async Task LoadTransactionsForUser(long BankAccountK)
 		{
 			Journal.IBankAccount selectedAccount = SecInstance.RunningJournal.GetBankAccount(BankAccountK);
-            TSPlayer player;
+			TSPlayer player;
 			var qTransactions = selectedAccount.Transactions;
 
 			gvTransactions.DataSource = null;
 			gvTransactions.DataSource = qTransactions;
 			tranList = SecInstance.RunningJournal.Transactions;
 
-            player = TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == selectedAccount.UserAccountName);
+			player = TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == selectedAccount.UserAccountName);
 
 			lblStatus.Text = string.Format("Loaded {0} transactions for {1}.", qTransactions.Count(), selectedAccount.UserAccountName);
 			if (player != null) {
@@ -76,7 +77,11 @@ namespace Wolfje.Plugins.SEconomy.Forms {
 			foreach (Journal.IBankAccount account in SecInstance.RunningJournal.BankAccounts) {
 				int p = Convert.ToInt32(((double)i / (double)SecInstance.RunningJournal.BankAccounts.Count) * 100);
 
-				sourceAccList.Add(new AccountSummary() { Name = account.UserAccountName, Balance = account.Balance, Value = account.BankAccountK });
+				sourceAccList.Add(new AccountSummary() {
+					Name = account.UserAccountName,
+					Balance = account.Balance,
+					Value = account.BankAccountK
+				});
 				this.MainThreadInvoke(() => {
 					toolStripProgressBar1.Value = p;
 				});
@@ -359,15 +364,17 @@ namespace Wolfje.Plugins.SEconomy.Forms {
 
 	class AccountSummary {
 		public string Name { get; set; }
+
 		public long Value { get; set; }
+
 		public Money Balance { get; set; }
-		public string DisplayValue
-		{
-			get
-			{
+
+		public string DisplayValue {
+			get {
 				return this.ToString();
 			}
 		}
+
 		public override string ToString()
 		{
 			return string.Format("{0} - {1} [{2}]", this.Name, this.Value, this.Balance);

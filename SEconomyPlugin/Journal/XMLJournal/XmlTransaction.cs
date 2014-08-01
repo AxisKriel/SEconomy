@@ -9,58 +9,54 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 		Dictionary<string, object> customValues;
 
 		#region "custom keys"
+
 		public const string kXmlTransactionOldTransactonK = "kXmlTransactionOldTransactonK";
 		public const string kXmlTransactionOldTransactonFK = "kXmlTransactionOldTransactonK";
+
 		#endregion
 
 		#region "public properties"
-		public long BankAccountTransactionK
-		{
+
+		public long BankAccountTransactionK {
 			get;
 			set;
 		}
 
-		public long BankAccountFK
-		{
+		public long BankAccountFK {
 			get;
 			set;
 		}
 
-		public Money Amount
-		{
+		public Money Amount {
 			get;
 			set;
 		}
 
-		public string Message
-		{
+		public string Message {
 			get;
 			set;
 		}
 
-		public BankAccountTransactionFlags Flags
-		{
+		public BankAccountTransactionFlags Flags {
 			get;
 			set;
 		}
 
-		public BankAccountTransactionFlags Flags2
-		{
+		public BankAccountTransactionFlags Flags2 {
 			get;
 			set;
 		}
 
-		public DateTime TransactionDateUtc
-		{
+		public DateTime TransactionDateUtc {
 			get;
 			set;
 		}
 
-		public long BankAccountTransactionFK
-		{
+		public long BankAccountTransactionFK {
 			get;
 			set;
 		}
+
 		#endregion
 
 		public XmlTransaction(IBankAccount OwningAccount)
@@ -73,24 +69,19 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			this.customValues = new Dictionary<string, object>();
 		}
 
-		public IBankAccount BankAccount
-		{
+		public IBankAccount BankAccount {
 			get { return owningBankAccount; }
 		}
 
-		public ITransaction OppositeTransaction
-		{
+		public ITransaction OppositeTransaction {
 			get { return this.owningBankAccount.OwningJournal.Transactions.FirstOrDefault(i => i.BankAccountTransactionK == this.BankAccountTransactionFK); }
 		}
 
-		public Dictionary<string, object> CustomValues
-		{
-			get
-			{
+		public Dictionary<string, object> CustomValues {
+			get {
 				return customValues;
 			}
-			set
-			{
+			set {
 				customValues = value;
 			}
 		}

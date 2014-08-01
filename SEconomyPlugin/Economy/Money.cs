@@ -19,9 +19,9 @@ namespace Wolfje.Plugins.SEconomy {
 		private const int ONE_COPPER = 1;
 
 		private static readonly Regex moneyRegex = new Regex(string.Format(@"(-)?((\d*){0})?((\d*){1})?((\d*){2})?((\d*){3})?", SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant4Abbreviation,
-			SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant3Abbreviation,
-			SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant2Abbreviation,
-			SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant1Abbreviation), RegexOptions.IgnoreCase);
+			                                           SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant3Abbreviation,
+			                                           SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant2Abbreviation,
+			                                           SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant1Abbreviation), RegexOptions.IgnoreCase);
 
 		private static readonly Regex numberRegex = new Regex(@"(\d*)", RegexOptions.IgnoreCase);
 
@@ -85,10 +85,8 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Returns the Platinum portion of this money instance
 		/// </summary>
-		public long Platinum
-		{
-			get
-			{
+		public long Platinum {
+			get {
 				if (SEconomyPlugin.Instance.Configuration.MoneyConfiguration.UseQuadrantNotation) {
 					return (long)Math.Floor((decimal)(_moneyValue / ONE_PLATINUM));
 				} else {
@@ -100,10 +98,8 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Returns the Gold portion of this money instance
 		/// </summary>
-		public long Gold
-		{
-			get
-			{
+		public long Gold {
+			get {
 				if (SEconomyPlugin.Instance.Configuration.MoneyConfiguration.UseQuadrantNotation) {
 					return (long)((_moneyValue % ONE_PLATINUM) - (_moneyValue % ONE_GOLD)) / 10000;
 				} else {
@@ -115,10 +111,8 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Returns the Silver portion of this money instance
 		/// </summary>
-		public long Silver
-		{
-			get
-			{
+		public long Silver {
+			get {
 
 				if (SEconomyPlugin.Instance.Configuration.MoneyConfiguration.UseQuadrantNotation) {
 					return (long)((_moneyValue % ONE_GOLD) - (_moneyValue % ONE_SILVER)) / 100;
@@ -132,10 +126,8 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Returns the Copper portion of this money instance
 		/// </summary>
-		public long Copper
-		{
-			get
-			{
+		public long Copper {
+			get {
 
 				if (SEconomyPlugin.Instance.Configuration.MoneyConfiguration.UseQuadrantNotation) {
 					return (long)_moneyValue % 100;
@@ -148,10 +140,8 @@ namespace Wolfje.Plugins.SEconomy {
 		/// <summary>
 		/// Returns the raw value of this structure.
 		/// </summary>
-		public long Value
-		{
-			get
-			{
+		public long Value {
+			get {
 				return _moneyValue;
 			}
 		}
@@ -246,10 +236,8 @@ namespace Wolfje.Plugins.SEconomy {
 			return sb.ToString();
 		}
 
-		public static string CurrencyName
-		{
-			get
-			{
+		public static string CurrencyName {
+			get {
 				if (!SEconomyPlugin.Instance.Configuration.MoneyConfiguration.UseQuadrantNotation) {
 					return SEconomyPlugin.Instance.Configuration.MoneyConfiguration.MoneyName.ToLowerInvariant();
 				}
@@ -287,9 +275,9 @@ namespace Wolfje.Plugins.SEconomy {
 			long totalMoney = 0;
 
 			if (!string.IsNullOrWhiteSpace(MoneyRepresentation) && new Regex(string.Format(@"{0}|{1}|{2}|{3}", SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant4Abbreviation,
-					SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant3Abbreviation,
-					SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant2Abbreviation,
-					SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant1Abbreviation)).IsMatch(MoneyRepresentation)) {
+				    SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant3Abbreviation,
+				    SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant2Abbreviation,
+				    SEconomyPlugin.Instance.Configuration.MoneyConfiguration.Quadrant1Abbreviation)).IsMatch(MoneyRepresentation)) {
 				Match moneyMatch = moneyRegex.Match(MoneyRepresentation);
 				long plat = 0, gold = 0, silver = 0, copper = 0;
 				string signedness = "";

@@ -6,118 +6,129 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
-    public class XmlBankAccount : IBankAccount {
-        ITransactionJournal owningJournal;
-        List<ITransaction> transactions;
+	public class XmlBankAccount : IBankAccount {
+		ITransactionJournal owningJournal;
+		List<ITransaction> transactions;
 
-        public XmlBankAccount(ITransactionJournal OwningJournal) {
-            this.owningJournal = OwningJournal;
-            this.transactions = new List<ITransaction>();
-        }
+		public XmlBankAccount(ITransactionJournal OwningJournal)
+		{
+			this.owningJournal = OwningJournal;
+			this.transactions = new List<ITransaction>();
+		}
 
-        #region "Public Properties"
-        public long BankAccountK { get; set; }
+		#region "Public Properties"
 
-        public string OldBankAccountK {
-            get;
-            set;
-        }
+		public long BankAccountK { get; set; }
 
-        public string UserAccountName {
-            get;
-            set;
-        }
+		public string OldBankAccountK {
+			get;
+			set;
+		}
 
-        public long WorldID {
-            get;
-            set;
-        }
+		public string UserAccountName {
+			get;
+			set;
+		}
 
-        public BankAccountFlags Flags {
-            get;
-            set;
-        }
+		public long WorldID {
+			get;
+			set;
+		}
 
-        public string Description {
-            get;
-            set;
-        }
+		public BankAccountFlags Flags {
+			get;
+			set;
+		}
 
-        public Money Balance {
-            get;
-            set;
-        }
+		public string Description {
+			get;
+			set;
+		}
 
-        public bool IsAccountEnabled {
-            get { return (this.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled; }
-        }
+		public Money Balance {
+			get;
+			set;
+		}
 
-        public bool IsSystemAccount {
-            get { return (this.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount; }
-        }
+		public bool IsAccountEnabled {
+			get { return (this.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled; }
+		}
 
-        public bool IsLockedToWorld {
-            get { return (this.Flags & Journal.BankAccountFlags.LockedToWorld) == Journal.BankAccountFlags.LockedToWorld; }
-        }
+		public bool IsSystemAccount {
+			get { return (this.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount; }
+		}
 
-        public bool IsPluginAccount {
-            get { return (this.Flags & Journal.BankAccountFlags.PluginAccount) == Journal.BankAccountFlags.PluginAccount; }
-        }
+		public bool IsLockedToWorld {
+			get { return (this.Flags & Journal.BankAccountFlags.LockedToWorld) == Journal.BankAccountFlags.LockedToWorld; }
+		}
 
-        public List<ITransaction> Transactions { get { return transactions; } }
-        
-        public ITransactionJournal OwningJournal { get { return owningJournal; } }
-        #endregion
+		public bool IsPluginAccount {
+			get { return (this.Flags & Journal.BankAccountFlags.PluginAccount) == Journal.BankAccountFlags.PluginAccount; }
+		}
 
-        public void SyncBalance() {
-            this.Balance = this.Transactions.Sum(i => i.Amount);
-        }
+		public List<ITransaction> Transactions { get { return transactions; } }
 
-        public System.Threading.Tasks.Task SyncBalanceAsync() {
-            return System.Threading.Tasks.Task.Factory.StartNew(() => SyncBalance());
-        }
+		public ITransactionJournal OwningJournal { get { return owningJournal; } }
 
-        public BankTransferEventArgs TransferTo(IBankAccount Account, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
-            return owningJournal.TransferBetween(this, Account, Amount, Options, TransactionMessage, JournalMessage);
-        }
+		#endregion
 
-        public async Task<BankTransferEventArgs> TransferToAsync(int Index, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
-            IBankAccount account = SEconomyPlugin.Instance.GetBankAccount(Index);
+		public void SyncBalance()
+		{
+			this.Balance = this.Transactions.Sum(i => i.Amount);
+		}
 
-            return await Task.Factory.StartNew(() => TransferTo(account, Amount, Options, TransactionMessage, JournalMessage));
-        }
+		public System.Threading.Tasks.Task SyncBalanceAsync()
+		{
+			return System.Threading.Tasks.Task.Factory.StartNew(() => SyncBalance());
+		}
 
-        public async Task<BankTransferEventArgs> TransferToAsync(IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage) {
-            return await Task.Factory.StartNew(() => TransferTo(ToAccount, Amount, Options, TransactionMessage, JournalMessage));
-        }
+		public BankTransferEventArgs TransferTo(IBankAccount Account, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)
+		{
+			return owningJournal.TransferBetween(this, Account, Amount, Options, TransactionMessage, JournalMessage);
+		}
 
-        public ITransaction AddTransaction(ITransaction Transaction) {
-            if (Transaction.BankAccountTransactionK == 0) {
-                Transaction.BankAccountTransactionK = Interlocked.Increment(ref XmlTransactionJournal._transactionSeed);
-            } else {
-                if (Transaction.BankAccountTransactionK > XmlTransactionJournal._transactionSeed) {
-                    Interlocked.Exchange(ref XmlTransactionJournal._transactionSeed, Transaction.BankAccountTransactionK);
-                }
-            }
+		public async Task<BankTransferEventArgs> TransferToAsync(int Index, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)
+		{
+			IBankAccount account = SEconomyPlugin.Instance.GetBankAccount(Index);
+
+			return await Task.Factory.StartNew(() => TransferTo(account, Amount, Options, TransactionMessage, JournalMessage));
+		}
+
+		public async Task<BankTransferEventArgs> TransferToAsync(IBankAccount ToAccount, Money Amount, BankAccountTransferOptions Options, string TransactionMessage, string JournalMessage)
+		{
+			return await Task.Factory.StartNew(() => TransferTo(ToAccount, Amount, Options, TransactionMessage, JournalMessage));
+		}
+
+		public ITransaction AddTransaction(ITransaction Transaction)
+		{
+			if (Transaction.BankAccountTransactionK == 0) {
+				Transaction.BankAccountTransactionK = Interlocked.Increment(ref XmlTransactionJournal._transactionSeed);
+			} else {
+				if (Transaction.BankAccountTransactionK > XmlTransactionJournal._transactionSeed) {
+					Interlocked.Exchange(ref XmlTransactionJournal._transactionSeed, Transaction.BankAccountTransactionK);
+				}
+			}
 
 			lock (Transactions) {
 				this.transactions.Add(Transaction);
 			}
 
-            return Transaction;
-        }
+			return Transaction;
+		}
 
-        public void ResetAccountTransactions(long BankAccountK) {
+		public void ResetAccountTransactions(long BankAccountK)
+		{
 			lock (Transactions) {
 				this.Transactions.Clear();
 			}
 
-            this.SyncBalance();
-        }
+			this.SyncBalance();
+		}
 
-        public Task ResetAccountTransactionsAsync(long BankAccountK) {
-            return Task.Factory.StartNew(() => ResetAccountTransactions(BankAccountK));
-        }
+		public Task ResetAccountTransactionsAsync(long BankAccountK)
+		{
+			return Task.Factory.StartNew(() => ResetAccountTransactions(BankAccountK));
+		}
 
-    }
+	}
 }

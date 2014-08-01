@@ -21,10 +21,8 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 	public class CmdAliasPlugin : TerrariaPlugin {
 		protected static CmdAlias aliasCmdInstance;
 
-		public static CmdAlias Instance
-		{
-			get
-			{
+		public static CmdAlias Instance {
+			get {
 				return aliasCmdInstance;
 			}
 		}
@@ -38,34 +36,26 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 			Order = int.MaxValue - 1;
 		}
 
-		public override string Author
-		{
-			get
-			{
+		public override string Author {
+			get {
 				return "Wolfje";
 			}
 		}
 
-		public override string Description
-		{
-			get
-			{
+		public override string Description {
+			get {
 				return "Provides a list of customized command aliases that cost money in SEconomy.";
 			}
 		}
 
-		public override string Name
-		{
-			get
-			{
+		public override string Name {
+			get {
 				return "CmdAlias";
 			}
 		}
 
-		public override Version Version
-		{
-			get
-			{
+		public override Version Version {
+			get {
 				return Assembly.GetExecutingAssembly().GetName().Version;
 			}
 		}

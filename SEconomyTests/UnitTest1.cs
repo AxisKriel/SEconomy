@@ -7,7 +7,7 @@ using Wolfje.Plugins.SEconomy.Extensions;
 using System.Linq;
 
 namespace SEconomyTests {
-	[TestClass]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable"), TestClass]
 	public class DatabaseTests {
 		protected static string host = "localhost";
 		protected static string catalog = "seconomy";

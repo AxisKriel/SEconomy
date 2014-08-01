@@ -12,17 +12,18 @@ namespace Wolfje.Plugins.SEconomy {
 	/// Disposable wrapper for all data handlers that SEconomy depends on to run
 	/// </summary>
 	public class EventHandlers : IDisposable {
-        public SEconomy Parent { get; protected set; }
-        protected System.Timers.Timer PayRunTimer { get; set; }
+		public SEconomy Parent { get; protected set; }
+
+		protected System.Timers.Timer PayRunTimer { get; set; }
 
 		public EventHandlers(SEconomy Parent)
 		{
 			this.Parent = Parent;
-            if (Parent.Configuration.PayIntervalMinutes > 0) {
-                PayRunTimer = new System.Timers.Timer(Parent.Configuration.PayIntervalMinutes * 60000);
-                PayRunTimer.Elapsed += PayRunTimer_Elapsed;
-                PayRunTimer.Start();
-            }
+			if (Parent.Configuration.PayIntervalMinutes > 0) {
+				PayRunTimer = new System.Timers.Timer(Parent.Configuration.PayIntervalMinutes * 60000);
+				PayRunTimer.Elapsed += PayRunTimer_Elapsed;
+				PayRunTimer.Start();
+			}
 
 			TShockAPI.Hooks.PlayerHooks.PlayerPostLogin += PlayerHooks_PlayerPostLogin;
 			Parent.RunningJournal.BankTransferCompleted += BankAccount_BankTransferCompleted;
@@ -39,18 +40,18 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		protected void BankAccount_BankTransferCompleted(object s, Journal.BankTransferEventArgs e)
 		{
-            TSPlayer sender, receiver;
+			TSPlayer sender, receiver;
 
 			if (e.ReceiverAccount == null
-				|| (e.TransferOptions & Journal.BankAccountTransferOptions.SuppressDefaultAnnounceMessages) 
-				== Journal.BankAccountTransferOptions.SuppressDefaultAnnounceMessages) {
+			    || (e.TransferOptions & Journal.BankAccountTransferOptions.SuppressDefaultAnnounceMessages)
+			    == Journal.BankAccountTransferOptions.SuppressDefaultAnnounceMessages) {
 				return;
 			}
 
-            sender = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == e.SenderAccount.UserAccountName);
-            receiver = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == e.ReceiverAccount.UserAccountName);
+			sender = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == e.SenderAccount.UserAccountName);
+			receiver = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == e.ReceiverAccount.UserAccountName);
 
-            if ((e.TransferOptions & Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) == Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) {
+			if ((e.TransferOptions & Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) == Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) {
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver && e.ReceiverAccount != null && receiver != null) {
 					receiver.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(16, "You {3} {0} from {1}. Transaction # {2}"), e.Amount.ToLongString(), 
 						sender != null ? sender.Name : SEconomyPlugin.Locale.StringOrDefault(17, "The server"), e.TransactionID, 
@@ -98,16 +99,16 @@ namespace Wolfje.Plugins.SEconomy {
 		{
 			byte index = default(byte);
 			PlayerControlFlags playerState = default(PlayerControlFlags);
-            Terraria.Player player;
+			Terraria.Player player;
 
-			if (args.MsgID != PacketTypes.PlayerUpdate 
-				|| (index = args.Msg.readBuffer[args.Index]) < 0
-                || (player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
+			if (args.MsgID != PacketTypes.PlayerUpdate
+			    || (index = args.Msg.readBuffer[args.Index]) < 0
+			    || (player = Terraria.Main.player.ElementAtOrDefault(args.Msg.whoAmI)) == null) {
 				return;
 			}
 
 			if ((playerState = (PlayerControlFlags)args.Msg.readBuffer[args.Index + 1]) != PlayerControlFlags.Idle) {
-                Parent.UpdatePlayerIdle(player);
+				Parent.UpdatePlayerIdle(player);
 			}
 		}
 
@@ -116,7 +117,7 @@ namespace Wolfje.Plugins.SEconomy {
 		/// </summary>
 		protected void ServerHooks_Leave(LeaveEventArgs args)
 		{
-            Parent.RemovePlayerIdleCache(Terraria.Main.player.ElementAtOrDefault(args.Who));
+			Parent.RemovePlayerIdleCache(Terraria.Main.player.ElementAtOrDefault(args.Who));
 		}
 
 		/// <summary>
@@ -134,20 +135,20 @@ namespace Wolfje.Plugins.SEconomy {
 
 		protected async void PlayerHooks_PlayerPostLogin(TShockAPI.Hooks.PlayerPostLoginEventArgs e)
 		{
-            IBankAccount account;
-            await Task.Delay(2500);
+			IBankAccount account;
+			await Task.Delay(2500);
 
-            if ((account = Parent.GetBankAccount(e.Player)) == null) {
-                if ((account = await Parent.CreatePlayerAccountAsync(e.Player)) == null) {
-                    TShockAPI.Log.ConsoleError("seconomy error:  Creating account for {0} failed.", e.Player.Name);
-                }
-                return;
-            }
+			if ((account = Parent.GetBankAccount(e.Player)) == null) {
+				if ((account = await Parent.CreatePlayerAccountAsync(e.Player)) == null) {
+					TShockAPI.Log.ConsoleError("seconomy error:  Creating account for {0} failed.", e.Player.Name);
+				}
+				return;
+			}
 
-            await account.SyncBalanceAsync();
+			await account.SyncBalanceAsync();
 			
 			e.Player.SendInfoMessage(SEconomyPlugin.Locale.StringOrDefault(26, "You have {0}."), 
-                account.Balance.ToLongString());
+				account.Balance.ToLongString());
 		}
 
 		/// <summary>
@@ -157,31 +158,31 @@ namespace Wolfje.Plugins.SEconomy {
 		protected void PayRunTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
 		{
 			Money payAmount = 0;
-            TimeSpan? idleSince;
-            IBankAccount playerAccount;
+			TimeSpan? idleSince;
+			IBankAccount playerAccount;
 
-			if (Parent.Configuration.PayIntervalMinutes <= 0 
-                || string.IsNullOrEmpty(Parent.Configuration.IntervalPayAmount) == true
-				|| Money.TryParse(Parent.Configuration.IntervalPayAmount, out payAmount) == false 
-                || payAmount <= 0) {
-					return;
+			if (Parent.Configuration.PayIntervalMinutes <= 0
+			    || string.IsNullOrEmpty(Parent.Configuration.IntervalPayAmount) == true
+			    || Money.TryParse(Parent.Configuration.IntervalPayAmount, out payAmount) == false
+			    || payAmount <= 0) {
+				return;
 			}
 
-            foreach (TSPlayer player in TShockAPI.TShock.Players) {
-                if (player == null 
-                    || Parent == null
-                    || (idleSince = Parent.PlayerIdleSince(player.TPlayer)) == null
-                    || idleSince.Value.TotalMinutes > Parent.Configuration.IdleThresholdMinutes
-                    || (playerAccount = Parent.GetBankAccount(player)) == null) {
-                    continue;
-                }
+			foreach (TSPlayer player in TShockAPI.TShock.Players) {
+				if (player == null
+				    || Parent == null
+				    || (idleSince = Parent.PlayerIdleSince(player.TPlayer)) == null
+				    || idleSince.Value.TotalMinutes > Parent.Configuration.IdleThresholdMinutes
+				    || (playerAccount = Parent.GetBankAccount(player)) == null) {
+					continue;
+				}
 
-                Parent.WorldAccount.TransferTo(playerAccount, 
-                    payAmount, 
-                    Journal.BankAccountTransferOptions.AnnounceToReceiver, 
-                    "being awesome",
-                    "being awesome");
-            }
+				Parent.WorldAccount.TransferTo(playerAccount, 
+					payAmount, 
+					Journal.BankAccountTransferOptions.AnnounceToReceiver, 
+					"being awesome",
+					"being awesome");
+			}
 		}
 
 		/// <summary>
@@ -209,8 +210,8 @@ namespace Wolfje.Plugins.SEconomy {
 				TShockAPI.Hooks.PlayerHooks.PlayerPostLogin -= PlayerHooks_PlayerPostLogin;
 				Parent.RunningJournal.BankTransferCompleted -= BankAccount_BankTransferCompleted;
 				TaskScheduler.UnobservedTaskException -= TaskScheduler_UnobservedTaskException;
-                PayRunTimer.Elapsed -= PayRunTimer_Elapsed;
-                PayRunTimer.Dispose();
+				PayRunTimer.Elapsed -= PayRunTimer_Elapsed;
+				PayRunTimer.Dispose();
 
 				ServerApi.Hooks.GamePostInitialize.Deregister(this.Parent.PluginInstance, GameHooks_PostInitialize);
 				ServerApi.Hooks.ServerJoin.Deregister(this.Parent.PluginInstance, ServerHooks_Join);

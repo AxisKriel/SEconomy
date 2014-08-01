@@ -45,31 +45,27 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		public event EventHandler<JournalLoadingPercentChangedEventArgs> JournalLoadingPercentChanged;
 
 		public SEconomy SEconomyInstance { get; set; }
+
 		public bool JournalSaving { get; set; }
+
 		public bool BackupsEnabled { get; set; }
 
-		public List<IBankAccount> BankAccounts
-		{
+		public List<IBankAccount> BankAccounts {
 			get { return bankAccounts; }
 		}
 
-		public IEnumerable<ITransaction> Transactions
-		{
+		public IEnumerable<ITransaction> Transactions {
 			get { return null; }
 		}
 
-		public MySqlConnection Connection
-		{
-			get
-			{
+		public MySqlConnection Connection {
+			get {
 				return new MySqlConnection(connectionString + "database=" + sqlProperties.DbName);
 			}
 		}
 
-		public MySqlConnection ConnectionNoCatalog
-		{
-			get
-			{
+		public MySqlConnection ConnectionNoCatalog {
+			get {
 				return new MySqlConnection(connectionString);
 			}
 		}
@@ -91,15 +87,15 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 									(user_account_name, world_id, flags, flags2, description)
 								  VALUES (@0, @1, @2, @3, @4);";
 
-            if (string.IsNullOrEmpty(Account.UserAccountName) == true) {
-                return null;
-            }
+			if (string.IsNullOrEmpty(Account.UserAccountName) == true) {
+				return null;
+			}
 
 			try {
-                if (Connection.QueryIdentity(query, out id, Account.UserAccountName, Account.WorldID,
-                    (int)Account.Flags, 0, Account.Description) < 0) {
-                        return null;
-                }
+				if (Connection.QueryIdentity(query, out id, Account.UserAccountName, Account.WorldID,
+					    (int)Account.Flags, 0, Account.Description) < 0) {
+					return null;
+				}
 			} catch (Exception ex) {
 				TShockAPI.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
 				return null;
@@ -113,31 +109,50 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public IBankAccount GetBankAccountByName(string UserAccountName)
 		{
-            if (bankAccounts == null) {
-                return null;
-            }
+			if (bankAccounts == null) {
+				return null;
+			}
 			return bankAccounts.FirstOrDefault(i => i.UserAccountName == UserAccountName);
 		}
 
 		public IBankAccount GetBankAccount(long BankAccountK)
 		{
-            if (bankAccounts == null) {
-                return null;
-            }
+			if (bankAccounts == null) {
+				return null;
+			}
 			return bankAccounts.FirstOrDefault(i => i.BankAccountK == BankAccountK);
 		}
 
 		public IEnumerable<IBankAccount> GetBankAccountList(long BankAccountK)
 		{
-            if (bankAccounts == null) {
-                return null;
-            }
+			if (bankAccounts == null) {
+				return null;
+			}
 			return BankAccounts.Where(i => i.BankAccountK == BankAccountK);
 		}
 
-		public void DeleteBankAccount(long BankAccountK)
+		public async void DeleteBankAccount(long BankAccountK)
 		{
-			int affected = Connection.Query("DELETE FROM `bank_account` WHERE `bank_account_id` = @0", BankAccountK);
+			IBankAccount account = GetBankAccount(BankAccountK);
+			int affected = 0;
+
+			try {
+				if (account == null
+				    || (affected = await Connection.QueryAsync("DELETE FROM `bank_account` WHERE `bank_account_id` = @0", BankAccountK)) == 0) {
+					return;
+				}
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: DeleteBankAccount failed: {0}",
+					ex.Message);
+			}
+
+			if (affected != 1) {
+				TShockAPI.Log.ConsoleError("seconomy mysql: DeleteBankAccount affected {0} rows where it should have only been 1.",
+					affected);
+				return;
+			}
+			
+			bankAccounts.Remove(account);
 		}
 
 		public void SaveJournal()
@@ -183,7 +198,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 			foreach (string resourceName in Assembly.GetExecutingAssembly().GetManifestResourceNames()) {
 				if ((nameMatch = createDbRegex.Match(resourceName)).Success == false
-					|| int.TryParse(nameMatch.Groups[1].Value, out scriptIndex) == false) {
+				    || int.TryParse(nameMatch.Groups[1].Value, out scriptIndex) == false) {
 					continue;
 				}
 
@@ -312,9 +327,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			TShockAPI.Log.ConsoleInfo("seconomy mysql: re-syncing online accounts");
 			foreach (TSPlayer player in TShockAPI.TShock.Players) {
 				IBankAccount account = null;
-				if (player == null 
-					|| player.UserAccountName == null
-					|| (account = instance.GetBankAccount(player)) == null) {
+				if (player == null
+				    || player.UserAccountName == null
+				    || (account = instance.GetBankAccount(player)) == null) {
 					continue;
 				}
 
@@ -330,9 +345,9 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				return false;
 			}
 
-			return ((FromAccount.IsSystemAccount || FromAccount.IsPluginAccount 
-				|| ((Options & Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount) == Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount)) 
-				|| (FromAccount.Balance >= MoneyNeeded && MoneyNeeded > 0));
+			return ((FromAccount.IsSystemAccount || FromAccount.IsPluginAccount
+			|| ((Options & Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount) == Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount))
+			|| (FromAccount.Balance >= MoneyNeeded && MoneyNeeded > 0));
 		}
 
 		ITransaction BeginSourceTransaction(MySqlTransaction SQLTransaction, long BankAccountK, Money Amount, string Message)
@@ -488,8 +503,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				BindTransactions(sqlTrans, sourceTran.BankAccountTransactionK, destTran.BankAccountTransactionK);
 				sqlTrans.Commit();
 			} catch (Exception ex) {
-				if (conn != null 
-					&& conn.State == ConnectionState.Open) {
+				if (conn != null
+				    && conn.State == ConnectionState.Open) {
 					try {
 						sqlTrans.Rollback();
 					} catch {
@@ -532,15 +547,15 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 			//World account matches the current world, ignore.
 			if ((SEconomyInstance.WorldAccount != null && SEconomyInstance.WorldAccount.WorldID == Terraria.Main.worldID)
-				|| Terraria.Main.worldID == 0) {
+			    || Terraria.Main.worldID == 0) {
 				return null;
 			}
 
 			worldAccount = (from i in bankAccounts
-							where (i.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount
-							   && (i.Flags & Journal.BankAccountFlags.PluginAccount) == 0
-							   && i.WorldID == Terraria.Main.worldID
-							select i).FirstOrDefault();
+			                where (i.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount
+			                    && (i.Flags & Journal.BankAccountFlags.PluginAccount) == 0
+			                    && i.WorldID == Terraria.Main.worldID
+			                select i).FirstOrDefault();
 
 			//world account does not exist for this world ID, create one
 			if (worldAccount == null) {
@@ -583,6 +598,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		protected virtual void Dispose(bool disposing)
 		{
 			if (disposing) {
+				mysqlConnection.Dispose();
 			}
 		}
 
