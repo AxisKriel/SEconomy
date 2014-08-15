@@ -36,8 +36,20 @@ namespace Wolfje.Plugins.SEconomy {
 		
 		#region "Loading and setup"
 
+		public bool IsNet45OrNewer()
+		{
+			// Class "ReflectionContext" exists from .NET 4.5 onwards.
+			return Type.GetType("System.Reflection.ReflectionContext", false) != null;
+		}
+
 		public int LoadSEconomy()
 		{
+			if (IsNet45OrNewer() == false) {
+				TShockAPI.Log.ConsoleError("SEconomy requires Microsoft .NET framework 4.5 or later.");
+				TShockAPI.Log.ConsoleError("SEconomy will not run.");
+				return -1;
+			}
+
 			try {
 				this.Configuration = Config.FromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
 				LoadJournal();
@@ -210,6 +222,29 @@ namespace Wolfje.Plugins.SEconomy {
 		{
 			return GetBankAccount(TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Name == playerName));
 		}
+
+		public Task<List<KeyValuePair<TSPlayer, IBankAccount>>> SearchPlayerBankAccountAsync(string playerName)
+		{
+			return Task.Run(() => SearchPlayerBankAccount(playerName));
+		}
+
+		public List<KeyValuePair<TSPlayer, IBankAccount>> SearchPlayerBankAccount(string playerName)
+		{
+			List<KeyValuePair<TSPlayer, IBankAccount>> accountList = new List<KeyValuePair<TSPlayer, IBankAccount>>();
+			IBankAccount targetAccount;
+
+			foreach (TSPlayer player in TShockAPI.TShock.Players) {
+				if (player == null
+				    || (targetAccount = GetBankAccount(player)) == null) {
+					continue;
+				}
+
+				accountList.Add(new KeyValuePair<TSPlayer, IBankAccount>(player, targetAccount));
+			}
+
+			return accountList;
+		}
+
 
 		public IBankAccount GetBankAccount(int who)
 		{

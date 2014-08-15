@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
+using System.IO;
 using Newtonsoft.Json;
 
 namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
@@ -16,24 +16,74 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 		public static Configuration LoadConfigurationFromFile(string Path)
 		{
 			Configuration config = null;
+			string confDirectory = System.IO.Path.Combine(Path, "aliascmd.conf.d");
 
 			try {
 				string fileText = System.IO.File.ReadAllText(Path);
-
 				config = JsonConvert.DeserializeObject<Configuration>(fileText);
-
 			} catch (Exception ex) {
 				if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
 					TShockAPI.Log.ConsoleError("cmdalias configuration: Cannot find file or directory. Creating new one.");
 
 					config = Configuration.NewSampleConfiguration();
-
 					config.SaveConfiguration(Path);
-
 				} else if (ex is System.Security.SecurityException) {
 					TShockAPI.Log.ConsoleError("cmdalias configuration: Access denied reading file " + Path);
 				} else {
 					TShockAPI.Log.ConsoleError("cmdalias configuration: error " + ex.ToString());
+				}
+			}
+
+			if (Directory.Exists(confDirectory) == false) {
+				try {
+					Directory.CreateDirectory(confDirectory);
+				} catch {
+				}
+			}	
+
+			if (Directory.Exists(confDirectory) == false) {
+				return config;
+			}
+
+			/*
+			 * Command aliases in .json files in the subdirectory "aliascmd.conf.d"
+			 * will be loaded into the main configuration.
+			 */
+			foreach (string aliasFile in Directory.EnumerateFiles(confDirectory, "*.json")) {
+				string fileText = null;
+				Configuration extraConfig = null;
+
+				if (string.IsNullOrEmpty(aliasFile)
+				    || File.Exists(aliasFile) == false) {
+					continue;
+				}
+
+				try {
+					fileText = File.ReadAllText(aliasFile);
+				} catch {
+				}
+
+				if (string.IsNullOrEmpty(fileText) == true) {
+					continue;
+				}
+
+				try {
+					extraConfig = JsonConvert.DeserializeObject<Configuration>(fileText);
+				} catch {
+				}
+			
+				if (extraConfig == null) {
+					continue;
+				}
+
+				foreach (AliasCommand alias in extraConfig.CommandAliases) {
+					if (config.CommandAliases.FirstOrDefault(i => i.CommandAlias == alias.CommandAlias) != null) {
+						TShockAPI.Log.ConsoleError("aliascmd warning: Duplicate alias {0} in file {1} ignored",
+							alias.CommandAlias, System.IO.Path.GetFileName(aliasFile));
+						continue;
+					}
+
+					config.CommandAliases.Add(alias);
 				}
 			}
 
