@@ -31,6 +31,9 @@ namespace Wolfje.Plugins.SEconomy {
 
 You do NOT have to restart the server to issue this command.  Just continue as normal, and issue the command when the game starts.";
 
+		public static event EventHandler SEconomyLoaded;
+		public static event EventHandler SEconomyUnloaded;
+
 		#region "API Plugin Stub"
 
 		public override string Author {
@@ -93,6 +96,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 			}
 		}
 
+
 		protected void PrintIntro()
 		{
 			Console.WriteLine();
@@ -145,6 +149,21 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 			return sb.ToString();
 		}
 
+		protected void RaiseUnloadedEvent()
+		{
+			if (SEconomyUnloaded != null) {
+				SEconomyUnloaded(this, new EventArgs());
+			}
+		}
+
+		protected void RaiseLoadedEvent()
+		{
+			if (SEconomyLoaded != null) {
+				SEconomyLoaded(this, new EventArgs());
+			}
+		}
+
+
 		protected async void TShock_CommandExecuted(TShockAPI.CommandArgs args)
 		{
 			if (args.Parameters.Count == 0) {
@@ -165,6 +184,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 						if (Instance != null) {
 							Instance.Dispose();
 							Instance = null;
+							RaiseUnloadedEvent();
 						}
 
 						try {
@@ -173,6 +193,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 								throw new Exception("LoadSEconomy() failed.");
 							}
 							await Instance.BindToWorldAsync();
+							RaiseLoadedEvent();
 						} catch {
 							Instance = null;
 							TShockAPI.Log.ConsoleError(genericErrorMessage);
@@ -180,6 +201,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 						}
 					});
 				} catch {
+					RaiseUnloadedEvent();
 					args.Player.SendErrorMessage(Locale.StringOrDefault(12, "SEconomy failed to initialize, and will be unavailable for this session."));
 					return;
 				}
@@ -197,6 +219,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 				});
 
 				args.Player.SendSuccessMessage(Locale.StringOrDefault(10, "SEconomy is stopped."));
+				RaiseUnloadedEvent();
 			} else if (args.Parameters[0].Equals("start", StringComparison.CurrentCultureIgnoreCase)
 			           && args.Player.Group.HasPermission("seconomy.command.start") == true) {
 				if (Instance != null) {
@@ -211,7 +234,9 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 								throw new Exception("LoadSEconomy() failed.");
 							}
 							await Instance.BindToWorldAsync();
+
 						} catch {
+							RaiseUnloadedEvent();
 							Instance = null;
 							TShockAPI.Log.ConsoleError(genericErrorMessage);
 							throw;
@@ -223,9 +248,12 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 				}
 
 				args.Player.SendSuccessMessage(Locale.StringOrDefault(13, "SEconomy has started."));
+				RaiseLoadedEvent();
 			} else if ((args.Parameters[0].Equals("multi", StringComparison.CurrentCultureIgnoreCase)
 			           || args.Parameters[0].Equals("multiplier", StringComparison.CurrentCultureIgnoreCase))
 			           && args.Player.Group.HasPermission("seconomy.command.multi") == true) {
+				
+				RaiseUnloadedEvent();
 				int multi = 0;
 
 				if (args.Parameters.Count == 1) {
@@ -249,8 +277,10 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing) {
-				Instance.Dispose();
-				Instance = null;
+				if (Instance != null) {
+					Instance.Dispose();
+					Instance = null;
+				}
 			}
 
 			base.Dispose(disposing);

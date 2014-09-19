@@ -32,7 +32,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 			this.instance = instance;
 			this.sqlProperties = sqlProperties;
-			this.connectionString = string.Format("server={0};user id={1};password={2};connect timeout=60;", sqlProperties.DbHost,
+			this.connectionString = string.Format("server={0};user id={1};password={2};connect timeout=60;", 
+				sqlProperties.DbHost,
 				sqlProperties.DbUsername, sqlProperties.DbPassword);
 			this.SEconomyInstance = instance;
 			this.mysqlConnection = new MySqlConnection(connectionString);
@@ -217,27 +218,57 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 
 
-		public void LoadJournal()
+		public bool LoadJournal()
 		{
+			string readKey = null;
+
 			ConsoleEx.WriteLineColour(ConsoleColor.Cyan, " Using MySQL journal - mysql://{0}@{1}/{2}\r\n", 
 				sqlProperties.DbUsername, sqlProperties.DbHost, sqlProperties.DbName);
 
-			if (DatabaseExists() == false) {
-				try {
-					CreateDatabase();
-				} catch (Exception ex) {
-					TShockAPI.Log.ConsoleError(" Your SEconomy database does not exist and it couldn't be created.");
-					TShockAPI.Log.ConsoleError(" Check your SQL server is on, and the credentials you supplied have");
-					TShockAPI.Log.ConsoleError(" permissions to CREATE DATABASE.");
-					TShockAPI.Log.ConsoleError(" The error was: {0}", ex.Message);
-					throw;
+			while (true) {
+				if (DatabaseExists() == true) {
+					break;
+				}
+
+				TShockAPI.Log.ConsoleInfo("The database {0} on MySQL server {1} does not exist or cannot be accessed.", 
+					sqlProperties.DbName, 
+					sqlProperties.DbHost);
+				TShockAPI.Log.ConsoleInfo("If the schema does exist, make sure the SQL user has access to it.");
+
+				Console.Write("New database {0} on MySQL Server {1}, retry or cancel? (n/r/c) ", 
+					sqlProperties.DbName, 
+					sqlProperties.DbHost);
+
+				readKey = Console.ReadLine();
+				if (readKey.Equals("n", StringComparison.CurrentCultureIgnoreCase)) {
+					try {
+						CreateSchema();
+						break;	
+					} catch {
+					}
+				} else if (readKey.Equals("c", StringComparison.CurrentCultureIgnoreCase)) {
+					return false;
 				}
 			}
 
 			LoadBankAccounts();
+			return true;
 		}
 
-		public Task LoadJournalAsync()
+		protected void CreateSchema()
+		{
+			try {
+				CreateDatabase();
+			} catch (Exception ex) {
+				TShockAPI.Log.ConsoleError(" Your SEconomy database does not exist and it couldn't be created.");
+				TShockAPI.Log.ConsoleError(" Check your SQL server is on, and the credentials you supplied have");
+				TShockAPI.Log.ConsoleError(" permissions to CREATE DATABASE.");
+				TShockAPI.Log.ConsoleError(" The error was: {0}", ex.Message);
+				throw;
+			}
+		}
+
+		public Task<bool> LoadJournalAsync()
 		{
 			return Task.Run(() => LoadJournal());
 		}

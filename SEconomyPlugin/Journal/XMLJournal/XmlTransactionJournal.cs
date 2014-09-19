@@ -53,6 +53,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			if (Parent != null && Parent.Configuration.JournalBackupMinutes > 0) {
 				JournalBackupTimer = new System.Timers.Timer(Parent.Configuration.JournalBackupMinutes * 60000);
 				JournalBackupTimer.Elapsed += JournalBackupTimer_Elapsed;
+				JournalBackupTimer.Start();
 				this.BackupsEnabled = true;
 			}
 		}
@@ -62,7 +63,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 		/// </summary>
 		protected async void JournalBackupTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
 		{
-			if (this.BackupsEnabled == false || this.JournalSaving == true) {
+			if (this.BackupsEnabled == false
+			    || this.JournalSaving == true) {
 				return;
 			}
 
@@ -368,7 +370,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			return Task.Factory.StartNew(() => SaveJournal());
 		}
 
-		public void LoadJournal()
+		public bool LoadJournal()
 		{
 			MemoryStream uncompressedData;
 			JournalLoadingPercentChangedEventArgs parsingArgs = new JournalLoadingPercentChangedEventArgs() {
@@ -404,7 +406,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 					uncompressedData = GZipDecompress(fileData);
 				} catch {
 					TShockAPI.Log.ConsoleError(" * Decompression failed.");
-					return;
+					return false;
 				}
 
 				if (JournalLoadingPercentChanged != null) {
@@ -607,9 +609,11 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 			} finally {
 				Console.WriteLine();
 			}
+
+			return true;
 		}
 
-		public Task LoadJournalAsync()
+		public Task<bool> LoadJournalAsync()
 		{
 			return Task.Factory.StartNew(() => LoadJournal());
 		}
@@ -683,11 +687,15 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
 
 		bool TransferMaySucceed(IBankAccount FromAccount, IBankAccount ToAccount, Money MoneyNeeded, Journal.BankAccountTransferOptions Options)
 		{
-			if (FromAccount == null || ToAccount == null) {
+			if (FromAccount == null
+			    || ToAccount == null) {
 				return false;
 			}
 
-			return ((FromAccount.IsSystemAccount || FromAccount.IsPluginAccount || ((Options & Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount) == Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount)) || (FromAccount.Balance >= MoneyNeeded && MoneyNeeded > 0));
+			return FromAccount.IsSystemAccount
+			|| FromAccount.IsPluginAccount
+			|| ((Options & Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount) == Journal.BankAccountTransferOptions.AllowDeficitOnNormalAccount)
+			|| (FromAccount.Balance >= MoneyNeeded && MoneyNeeded > 0);
 		}
 
 		ITransaction BeginSourceTransaction(long BankAccountK, Money Amount, string Message)

@@ -52,7 +52,9 @@ namespace Wolfje.Plugins.SEconomy {
 
 			try {
 				this.Configuration = Config.FromFile(Config.BaseDirectory + System.IO.Path.DirectorySeparatorChar + "SEconomy.config.json");
-				LoadJournal();
+				if (LoadJournal() == false) {
+					return -1;
+				}
 				this.WorldEc = new WorldEconomy(this);
 				this.EventHandlers = new EventHandlers(this);
 				this.ChatCommands = new ChatCommands(this);
@@ -64,32 +66,32 @@ namespace Wolfje.Plugins.SEconomy {
 			return 0;
 		}
 
-		protected void LoadJournal()
+		protected bool LoadJournal()
 		{
 			Journal.ITransactionJournal journal = null;
 			if (Configuration == null) {
-				return;
+				return false;
 			}
 
 			if (Configuration.JournalType.Equals("xml", StringComparison.InvariantCultureIgnoreCase) == true) {
 				Wolfje.Plugins.SEconomy.Journal.XMLJournal.XmlTransactionJournal xmlJournal = new Journal.XMLJournal.XmlTransactionJournal(this, Config.JournalPath);
-				xmlJournal.JournalLoadingPercentChanged += (sender, args) => {
-					ConsoleEx.WriteBar(args);
-				};
+				xmlJournal.JournalLoadingPercentChanged += (sender, args) => ConsoleEx.WriteBar(args);
 
 				journal = xmlJournal;
 			} else if (Configuration.JournalType.Equals("mysql", StringComparison.InvariantCultureIgnoreCase) == true
 			           || Configuration.JournalType.Equals("sql", StringComparison.InvariantCultureIgnoreCase) == true) {
 				Wolfje.Plugins.SEconomy.Journal.MySQLJournal.MySQLTransactionJournal sqlJournal = new Journal.MySQLJournal.MySQLTransactionJournal(this, Configuration.SQLConnectionProperties);
-				sqlJournal.JournalLoadingPercentChanged += (sender, args) => {
-					ConsoleEx.WriteBar(args);
-				};
+				sqlJournal.JournalLoadingPercentChanged += (sender, args) => ConsoleEx.WriteBar(args);
 
 				journal = sqlJournal;
 			}
 
 			this.RunningJournal = journal;
-			this.RunningJournal.LoadJournal();
+			if (this.RunningJournal.LoadJournal() == false) {
+				return false;
+			}
+
+			return true;
 		}
 
 		internal async Task<Journal.IBankAccount> CreatePlayerAccountAsync(TSPlayer player)
@@ -248,10 +250,7 @@ namespace Wolfje.Plugins.SEconomy {
 
 		public IBankAccount GetBankAccount(int who)
 		{
-			if (who < 0) {
-				return GetBankAccount(TSPlayer.Server);
-			}
-			return GetBankAccount(TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == who));
+			return who < 0 ? GetBankAccount(TSPlayer.Server) : GetBankAccount(TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == who));
 		}
 
 		/// <summary>
@@ -292,11 +291,21 @@ namespace Wolfje.Plugins.SEconomy {
 		protected virtual void Dispose(bool disposing)
 		{
 			if (disposing == true) {
-				this.EventHandlers.Dispose();
-				this.ChatCommands.Dispose();
-				this.WorldEc.Dispose();
-				this.TransactionCache.Dispose();
-				this.RunningJournal.Dispose();
+				if (this.EventHandlers != null) {
+					this.EventHandlers.Dispose();
+				}
+				if (this.ChatCommands != null) {
+					this.ChatCommands.Dispose();
+				}
+				if (this.WorldEc != null) {
+					this.WorldEc.Dispose();
+				}
+				if (this.TransactionCache != null) {
+					this.TransactionCache.Dispose();
+				}
+				if (this.RunningJournal != null) {
+					this.RunningJournal.Dispose();
+				}
 				this.Configuration = null;
 			}
 

@@ -41,9 +41,9 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
 		Task SaveJournalAsync();
 
-		void LoadJournal();
+		bool LoadJournal();
 
-		Task LoadJournalAsync();
+		Task<bool> LoadJournalAsync();
 
 		void BackupJournal();
 
