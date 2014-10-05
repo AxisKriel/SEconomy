@@ -105,6 +105,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 		{
 			try {
 				journal.Connection.Query("DELETE FROM `bank_account_transaction` WHERE `bank_account_fk` = " + this.BankAccountK + ";");
+                this.Balance = 0;
 			} catch {
 				TShockAPI.Log.ConsoleError(" seconomy mysql: MySQL command error in ResetAccountTransactions");
 			}

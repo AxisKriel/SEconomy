@@ -47,7 +47,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 
 		IEnumerable<IBankAccount> GetBankAccountList(long BankAccountK);
 
-		void DeleteBankAccount(long BankAccountK);
+		Task DeleteBankAccountAsync(long BankAccountK);
 
 		event EventHandler<BankTransferEventArgs> BankTransferCompleted;
 
@@ -76,5 +76,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 		IBankAccount GetWorldAccount();
 
 		void DumpSummary();
+		
+		void CleanJournal(PurgeOptions options);
 	}
 }

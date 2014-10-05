@@ -38,7 +38,7 @@ namespace Wolfje.Plugins.SEconomy.Extensions {
 			int result;
 
 			try {
-				await Task.Run(() => connection.Open());
+                connection.Open();
 				command = connection.CreateCommand();
 				command.CommandText = query;
 				command.CommandTimeout = 60;

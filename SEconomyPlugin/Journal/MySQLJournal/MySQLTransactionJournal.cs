@@ -121,36 +121,60 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			}
 
 			Account.BankAccountK = id;
-			BankAccounts.Add(Account);
-			
+            lock (BankAccounts) {
+                BankAccounts.Add(Account);
+            }
+
 			return Account;
 		}
 
 		public IBankAccount GetBankAccountByName(string UserAccountName)
 		{
+            IBankAccount account;
+
 			if (bankAccounts == null) {
 				return null;
 			}
-			return bankAccounts.FirstOrDefault(i => i.UserAccountName == UserAccountName);
+
+            lock (BankAccounts) {
+                account = bankAccounts.FirstOrDefault(i => i.UserAccountName == UserAccountName);
+            }
+
+            return account;
 		}
 
 		public IBankAccount GetBankAccount(long BankAccountK)
 		{
-			if (bankAccounts == null) {
+            IBankAccount account;
+
+			if (BankAccounts == null) {
 				return null;
 			}
-			return bankAccounts.FirstOrDefault(i => i.BankAccountK == BankAccountK);
+
+            lock (BankAccounts) {
+                account = BankAccounts.FirstOrDefault(i => i.BankAccountK == BankAccountK);
+            }
+
+            return account;
 		}
 
 		public IEnumerable<IBankAccount> GetBankAccountList(long BankAccountK)
 		{
+            IEnumerable<IBankAccount> list;
+
 			if (bankAccounts == null) {
 				return null;
 			}
-			return BankAccounts.Where(i => i.BankAccountK == BankAccountK);
+
+            lock (BankAccounts) {
+                list = BankAccounts.Where(i => i.BankAccountK == BankAccountK);
+            }
+
+            return list;
 		}
 
-		public async void DeleteBankAccount(long BankAccountK)
+		
+		public async Task DeleteBankAccountAsync(long BankAccountK)
 		{
 			IBankAccount account = GetBankAccount(BankAccountK);
 			int affected = 0;
@@ -170,8 +194,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 					affected);
 				return;
 			}
-			
-			bankAccounts.Remove(account);
+
+            lock (BankAccounts) {
+                BankAccounts.RemoveAll(i => i.BankAccountK == BankAccountK);
+            }
 		}
 
 		public void SaveJournal()
@@ -234,8 +260,6 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			}
 		}
 
-
-
 		public bool LoadJournal()
 		{
 			string readKey = null;
@@ -270,6 +294,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			}
 
 			LoadBankAccounts();
+
 			return true;
 		}
 
@@ -305,13 +330,15 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 					JournalLoadingPercentChanged(this, parsingArgs);
 				}
 
-				
-
 				bankAccounts = new List<IBankAccount>();
 				bankAccountCount = Connection.QueryScalar<long>("select count(*) from `bank_account`;");
 				tranCount = Connection.QueryScalar<long>("select count(*) from `bank_account_transaction`;");
 
-				QueryResult bankAccountResult = Connection.QueryReader("select * from `bank_account`;");
+                QueryResult bankAccountResult = Connection.QueryReader(@"select bank_account.*, sum(bank_account_transaction.amount) as balance
+                                                                         from bank_account 
+                                                                             inner join bank_account_transaction on bank_account_transaction.bank_account_fk = bank_account.bank_account_id 
+                                                                         group by bank_account.bank_account_id;");
+
 				Action<int> percentCompleteFunc = i => {
 					percentComplete = (double)i / (double)bankAccountCount * 100;
 
@@ -331,12 +358,13 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 						Description = acc.Get<string>("description"),
 						Flags = (BankAccountFlags)Enum.Parse(typeof(BankAccountFlags), acc.Get<int>("flags").ToString()),
 						UserAccountName = acc.Get<string>("user_account_name"),
-						WorldID = acc.Get<long>("world_id")
+						WorldID = acc.Get<long>("world_id"),
+                        Balance = acc.Get<long>("balance")
 					};
 
-					sqlAccount.SyncBalance();
-					lock (bankAccounts) {
-						bankAccounts.Add(sqlAccount);
+					//sqlAccount.SyncBalance();
+					lock (BankAccounts) {
+						BankAccounts.Add(sqlAccount);
 					}
 
 					Interlocked.Increment(ref index);
@@ -347,6 +375,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				if (JournalLoadingPercentChanged != null) {
 					JournalLoadingPercentChanged(this, parsingArgs);
 				}
+
+               // CleanJournal(PurgeOptions.RemoveOrphanedAccounts | PurgeOptions.RemoveZeroBalanceAccounts);
 
 				Console.WriteLine("\r\n");
 				ConsoleEx.WriteLineColour(ConsoleColor.Cyan, " Journal clean: {0} accounts, {1} transactions", BankAccounts.Count(), tranCount);
@@ -502,7 +532,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			if (SEconomyInstance.Configuration.EnableProfiler == true) {
 				sw.Start();
 			}
-			if (ToAccount == null || TransferMaySucceed(FromAccount, ToAccount, Amount, Options) == false) {
+			if (ToAccount == null 
+                || TransferMaySucceed(FromAccount, ToAccount, Amount, Options) == false) {
 				return args;
 			}
 
@@ -529,7 +560,8 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				BankTransactionPending(this, pendingTransaction);
 			}
 
-			if (pendingTransaction == null || pendingTransaction.IsCancelled == true) {
+			if (pendingTransaction == null 
+                || pendingTransaction.IsCancelled == true) {
 				return args;
 			}
 
@@ -600,16 +632,23 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				return null;
 			}
 
-			worldAccount = (from i in bankAccounts
-			                where (i.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount
-			                    && (i.Flags & Journal.BankAccountFlags.PluginAccount) == 0
-			                    && i.WorldID == Terraria.Main.worldID
-			                select i).FirstOrDefault();
+            lock (BankAccounts) {
+                worldAccount = (from i in bankAccounts
+                                where (i.Flags & Journal.BankAccountFlags.SystemAccount) == Journal.BankAccountFlags.SystemAccount
+                                    && (i.Flags & Journal.BankAccountFlags.PluginAccount) == 0
+                                    && i.WorldID == Terraria.Main.worldID
+                                select i).FirstOrDefault();
+            }
 
 			//world account does not exist for this world ID, create one
 			if (worldAccount == null) {
 				//This account is always enabled, locked to the world it's in and a system account (ie. can run into deficit) but not a plugin account
-				IBankAccount newWorldAcc = AddBankAccount("SYSTEM", Terraria.Main.worldID, Journal.BankAccountFlags.Enabled | Journal.BankAccountFlags.LockedToWorld | Journal.BankAccountFlags.SystemAccount, "World account for world " + Terraria.Main.worldName);
+				IBankAccount newWorldAcc = AddBankAccount("SYSTEM", 
+                    Terraria.Main.worldID, 
+                    Journal.BankAccountFlags.Enabled 
+                        | Journal.BankAccountFlags.LockedToWorld 
+                        | Journal.BankAccountFlags.SystemAccount, 
+                    "World account for world " + Terraria.Main.worldName);
 
 				worldAccount = newWorldAcc;
 			}
@@ -634,6 +673,69 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			throw new NotImplementedException();
 		}
 
+        public void CleanJournal(PurgeOptions options)
+        {
+            long oldPercent = 0;
+            List<string> userList = TShock.Users.GetUsers().Select(i => i.Name).ToList();
+            List<long> deleteList = new List<long>();
+            JournalLoadingPercentChangedEventArgs args = new JournalLoadingPercentChangedEventArgs() {
+                Label = "Scrub",
+                Percent = 0
+            };
+
+            if (JournalLoadingPercentChanged != null) {
+                JournalLoadingPercentChanged(this, args);
+            }
+
+            for (int i = 0; i < this.BankAccounts.Count; i++) {
+                double pcc = (double)i / (double)BankAccounts.Count * 100;
+                IBankAccount account = this.bankAccounts.ElementAtOrDefault(i);
+
+                if ((options & PurgeOptions.RemoveOrphanedAccounts) == PurgeOptions.RemoveOrphanedAccounts
+                    && userList.Contains(account.UserAccountName) == false) {
+                    if (deleteList.Contains(account.BankAccountK) == false) {
+                        deleteList.Add(account.BankAccountK);
+                        userList.Remove(account.UserAccountName);
+                        continue;
+                    }
+                }
+
+                if ((options & PurgeOptions.RemoveZeroBalanceAccounts) == PurgeOptions.RemoveZeroBalanceAccounts
+                    && (account.Balance <= 0 && account.IsSystemAccount == false)) {
+                    if (deleteList.Contains(account.BankAccountK) == false) {
+                        deleteList.Add(account.BankAccountK);
+                        continue;
+                    }
+                }
+
+                if (oldPercent != (int)pcc) {
+                    args.Percent = (int)pcc;
+                    if (JournalLoadingPercentChanged != null) {
+                        JournalLoadingPercentChanged(this, args);
+                    }
+                    oldPercent = (int)pcc;
+                }
+            }
+
+            if (deleteList.Count > 0) {
+                args.Label = "Clean";
+                args.Percent = 0;
+                for (int i = 0; i < deleteList.Count; i++) {
+                    double pcc = (double)i / (double)deleteList.Count * 100;
+
+                    DeleteBankAccountAsync(deleteList[i]).Wait();
+
+                    if (oldPercent != (int)pcc) {
+                        args.Percent = (int)pcc;
+                        if (JournalLoadingPercentChanged != null) {
+                            JournalLoadingPercentChanged(this, args);
+                        }
+                        oldPercent = (int)pcc;
+                    }
+                }
+            }
+        }
+		
 		#endregion
 
 		#region IDisposable Members

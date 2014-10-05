@@ -36,22 +36,15 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.toolStrip2 = new System.Windows.Forms.ToolStrip();
-            this.lblSearch = new System.Windows.Forms.ToolStripLabel();
             this.txtSearch = new System.Windows.Forms.ToolStripTextBox();
             this.gvAccounts = new System.Windows.Forms.DataGridView();
-            this.clmName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.clmBalance = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.lblName = new System.Windows.Forms.ToolStripLabel();
             this.lblBalance = new System.Windows.Forms.ToolStripLabel();
             this.lblOnline = new System.Windows.Forms.ToolStripLabel();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.btnRefreshTrans = new System.Windows.Forms.ToolStripButton();
-            this.btnResetTrans = new System.Windows.Forms.ToolStripButton();
-            this.btnShowFrom = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.btnModifyBalance = new System.Windows.Forms.ToolStripButton();
             this.gvTransactions = new System.Windows.Forms.DataGridView();
             this.clmId = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.clmFrom = new System.Windows.Forms.DataGridViewLinkColumn();
@@ -64,8 +57,24 @@
             this.ctxConfirmDeleteAccount = new System.Windows.Forms.ToolStripMenuItem();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.ctxTransaction = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.ctxAccountList = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.lblSearch = new System.Windows.Forms.ToolStripLabel();
+            this.deleteXAccountsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.btnRefreshTrans = new System.Windows.Forms.ToolStripButton();
+            this.btnResetTrans = new System.Windows.Forms.ToolStripButton();
+            this.btnShowFrom = new System.Windows.Forms.ToolStripButton();
+            this.btnModifyBalance = new System.Windows.Forms.ToolStripButton();
             this.ctxDeleteTransactionItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ctxDeleteTransactionConfirm = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.userDisplayOptionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showOnlineToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showOfflineToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showOrphanNoAccountToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showSystemToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.clmStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.clmName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.clmBalance = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.cAccountManagementWndBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
@@ -87,6 +96,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.gvTransactions)).BeginInit();
             this.ctxAccount.SuspendLayout();
             this.ctxTransaction.SuspendLayout();
+            this.ctxAccountList.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.cAccountManagementWndBindingSource)).BeginInit();
             this.SuspendLayout();
             // 
@@ -131,7 +141,8 @@
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileToolStripMenuItem});
+            this.fileToolStripMenuItem,
+            this.toolStripMenuItem1});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1103, 24);
@@ -202,15 +213,6 @@
             this.toolStrip2.TabIndex = 0;
             this.toolStrip2.Text = "toolStrip2";
             // 
-            // lblSearch
-            // 
-            this.lblSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.lblSearch.Image = ((System.Drawing.Image)(resources.GetObject("lblSearch.Image")));
-            this.lblSearch.Name = "lblSearch";
-            this.lblSearch.Padding = new System.Windows.Forms.Padding(5, 0, 5, 0);
-            this.lblSearch.Size = new System.Drawing.Size(68, 22);
-            this.lblSearch.Text = "Search";
-            // 
             // txtSearch
             // 
             this.txtSearch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
@@ -227,11 +229,12 @@
             this.gvAccounts.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.None;
             this.gvAccounts.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.gvAccounts.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.clmStatus,
             this.clmName,
             this.clmBalance});
+            this.gvAccounts.ContextMenuStrip = this.ctxAccountList;
             this.gvAccounts.Dock = System.Windows.Forms.DockStyle.Fill;
             this.gvAccounts.Location = new System.Drawing.Point(0, 0);
-            this.gvAccounts.MultiSelect = false;
             this.gvAccounts.Name = "gvAccounts";
             this.gvAccounts.ReadOnly = true;
             this.gvAccounts.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
@@ -240,23 +243,8 @@
             this.gvAccounts.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.gvAccounts.Size = new System.Drawing.Size(313, 572);
             this.gvAccounts.TabIndex = 0;
+            this.gvAccounts.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.gvAccounts_CellFormatting);
             this.gvAccounts.SelectionChanged += new System.EventHandler(this.gvAccounts_SelectionChanged);
-            // 
-            // clmName
-            // 
-            this.clmName.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.clmName.DataPropertyName = "Name";
-            this.clmName.HeaderText = "Name";
-            this.clmName.Name = "clmName";
-            this.clmName.ReadOnly = true;
-            // 
-            // clmBalance
-            // 
-            this.clmBalance.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.clmBalance.DataPropertyName = "Balance";
-            this.clmBalance.HeaderText = "Balance";
-            this.clmBalance.Name = "clmBalance";
-            this.clmBalance.ReadOnly = true;
             // 
             // splitContainer2
             // 
@@ -326,53 +314,10 @@
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
             // 
-            // btnRefreshTrans
-            // 
-            this.btnRefreshTrans.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnRefreshTrans.Image = ((System.Drawing.Image)(resources.GetObject("btnRefreshTrans.Image")));
-            this.btnRefreshTrans.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnRefreshTrans.Name = "btnRefreshTrans";
-            this.btnRefreshTrans.Size = new System.Drawing.Size(23, 22);
-            this.btnRefreshTrans.ToolTipText = "Refresh Transactions";
-            this.btnRefreshTrans.Click += new System.EventHandler(this.btnRefreshTrans_Click);
-            // 
-            // btnResetTrans
-            // 
-            this.btnResetTrans.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnResetTrans.Image = ((System.Drawing.Image)(resources.GetObject("btnResetTrans.Image")));
-            this.btnResetTrans.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnResetTrans.Name = "btnResetTrans";
-            this.btnResetTrans.Size = new System.Drawing.Size(23, 22);
-            this.btnResetTrans.Text = "toolStripButton1";
-            this.btnResetTrans.ToolTipText = "Delete all transactions for this user.  Resets balance to 0.";
-            this.btnResetTrans.Click += new System.EventHandler(this.btnResetTrans_Click);
-            // 
-            // btnShowFrom
-            // 
-            this.btnShowFrom.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnShowFrom.Image = ((System.Drawing.Image)(resources.GetObject("btnShowFrom.Image")));
-            this.btnShowFrom.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnShowFrom.Name = "btnShowFrom";
-            this.btnShowFrom.Size = new System.Drawing.Size(23, 22);
-            this.btnShowFrom.Text = "Show From";
-            this.btnShowFrom.ToolTipText = "Show who the transactions in the currently visible area were from";
-            this.btnShowFrom.Click += new System.EventHandler(this.btnShowFrom_Click);
-            // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
-            // 
-            // btnModifyBalance
-            // 
-            this.btnModifyBalance.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btnModifyBalance.Image = ((System.Drawing.Image)(resources.GetObject("btnModifyBalance.Image")));
-            this.btnModifyBalance.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btnModifyBalance.Name = "btnModifyBalance";
-            this.btnModifyBalance.Size = new System.Drawing.Size(23, 22);
-            this.btnModifyBalance.Text = "toolStripButton1";
-            this.btnModifyBalance.ToolTipText = "Modifies someone\'s account balance.";
-            this.btnModifyBalance.Click += new System.EventHandler(this.btnModifyBalance_Click);
             // 
             // gvTransactions
             // 
@@ -476,6 +421,74 @@
             this.ctxTransaction.Name = "ctxTransaction";
             this.ctxTransaction.Size = new System.Drawing.Size(173, 26);
             // 
+            // ctxAccountList
+            // 
+            this.ctxAccountList.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.deleteXAccountsToolStripMenuItem});
+            this.ctxAccountList.Name = "ctxAccountList";
+            this.ctxAccountList.Size = new System.Drawing.Size(169, 26);
+            this.ctxAccountList.Opening += new System.ComponentModel.CancelEventHandler(this.ctxAccountList_Opening);
+            // 
+            // lblSearch
+            // 
+            this.lblSearch.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.lblSearch.Image = ((System.Drawing.Image)(resources.GetObject("lblSearch.Image")));
+            this.lblSearch.Name = "lblSearch";
+            this.lblSearch.Padding = new System.Windows.Forms.Padding(5, 0, 5, 0);
+            this.lblSearch.Size = new System.Drawing.Size(68, 22);
+            this.lblSearch.Text = "Search";
+            // 
+            // deleteXAccountsToolStripMenuItem
+            // 
+            this.deleteXAccountsToolStripMenuItem.Image = global::Wolfje.Plugins.SEconomy.Properties.Resources.cross_script;
+            this.deleteXAccountsToolStripMenuItem.Name = "deleteXAccountsToolStripMenuItem";
+            this.deleteXAccountsToolStripMenuItem.Size = new System.Drawing.Size(168, 22);
+            this.deleteXAccountsToolStripMenuItem.Text = "Delete x Accounts";
+            this.deleteXAccountsToolStripMenuItem.Click += new System.EventHandler(this.deleteXAccountsToolStripMenuItem_Click);
+            // 
+            // btnRefreshTrans
+            // 
+            this.btnRefreshTrans.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnRefreshTrans.Image = ((System.Drawing.Image)(resources.GetObject("btnRefreshTrans.Image")));
+            this.btnRefreshTrans.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnRefreshTrans.Name = "btnRefreshTrans";
+            this.btnRefreshTrans.Size = new System.Drawing.Size(23, 22);
+            this.btnRefreshTrans.ToolTipText = "Refresh Transactions";
+            this.btnRefreshTrans.Click += new System.EventHandler(this.btnRefreshTrans_Click);
+            // 
+            // btnResetTrans
+            // 
+            this.btnResetTrans.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnResetTrans.Image = ((System.Drawing.Image)(resources.GetObject("btnResetTrans.Image")));
+            this.btnResetTrans.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnResetTrans.Name = "btnResetTrans";
+            this.btnResetTrans.Size = new System.Drawing.Size(23, 22);
+            this.btnResetTrans.Text = "toolStripButton1";
+            this.btnResetTrans.ToolTipText = "Delete all transactions for this user.  Resets balance to 0.";
+            this.btnResetTrans.Click += new System.EventHandler(this.btnResetTrans_Click);
+            // 
+            // btnShowFrom
+            // 
+            this.btnShowFrom.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnShowFrom.Image = ((System.Drawing.Image)(resources.GetObject("btnShowFrom.Image")));
+            this.btnShowFrom.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnShowFrom.Name = "btnShowFrom";
+            this.btnShowFrom.Size = new System.Drawing.Size(23, 22);
+            this.btnShowFrom.Text = "Show From";
+            this.btnShowFrom.ToolTipText = "Show who the transactions in the currently visible area were from";
+            this.btnShowFrom.Click += new System.EventHandler(this.btnShowFrom_Click);
+            // 
+            // btnModifyBalance
+            // 
+            this.btnModifyBalance.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnModifyBalance.Image = ((System.Drawing.Image)(resources.GetObject("btnModifyBalance.Image")));
+            this.btnModifyBalance.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.btnModifyBalance.Name = "btnModifyBalance";
+            this.btnModifyBalance.Size = new System.Drawing.Size(23, 22);
+            this.btnModifyBalance.Text = "toolStripButton1";
+            this.btnModifyBalance.ToolTipText = "Modifies someone\'s account balance.";
+            this.btnModifyBalance.Click += new System.EventHandler(this.btnModifyBalance_Click);
+            // 
             // ctxDeleteTransactionItem
             // 
             this.ctxDeleteTransactionItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -491,6 +504,92 @@
             this.ctxDeleteTransactionConfirm.Size = new System.Drawing.Size(118, 22);
             this.ctxDeleteTransactionConfirm.Text = "C&onfirm";
             this.ctxDeleteTransactionConfirm.Click += new System.EventHandler(this.ctxDeleteTransactionConfirm_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.userDisplayOptionsToolStripMenuItem});
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(61, 20);
+            this.toolStripMenuItem1.Text = "Options";
+            // 
+            // userDisplayOptionsToolStripMenuItem
+            // 
+            this.userDisplayOptionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.showOnlineToolStripMenuItem,
+            this.showOfflineToolStripMenuItem,
+            this.showOrphanNoAccountToolStripMenuItem,
+            this.showSystemToolStripMenuItem});
+            this.userDisplayOptionsToolStripMenuItem.Name = "userDisplayOptionsToolStripMenuItem";
+            this.userDisplayOptionsToolStripMenuItem.Size = new System.Drawing.Size(178, 22);
+            this.userDisplayOptionsToolStripMenuItem.Text = "List Display Options";
+            // 
+            // showOnlineToolStripMenuItem
+            // 
+            this.showOnlineToolStripMenuItem.Checked = true;
+            this.showOnlineToolStripMenuItem.CheckOnClick = true;
+            this.showOnlineToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showOnlineToolStripMenuItem.Name = "showOnlineToolStripMenuItem";
+            this.showOnlineToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
+            this.showOnlineToolStripMenuItem.Text = "Show Online";
+            this.showOnlineToolStripMenuItem.ToolTipText = "Show Online Users";
+            this.showOnlineToolStripMenuItem.Click += new System.EventHandler(this.showOnlineToolStripMenuItem_Click);
+            // 
+            // showOfflineToolStripMenuItem
+            // 
+            this.showOfflineToolStripMenuItem.Checked = true;
+            this.showOfflineToolStripMenuItem.CheckOnClick = true;
+            this.showOfflineToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showOfflineToolStripMenuItem.Name = "showOfflineToolStripMenuItem";
+            this.showOfflineToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
+            this.showOfflineToolStripMenuItem.Text = "Show Offline";
+            this.showOfflineToolStripMenuItem.ToolTipText = "Show Offline users";
+            this.showOfflineToolStripMenuItem.Click += new System.EventHandler(this.showOfflineToolStripMenuItem_Click);
+            // 
+            // showOrphanNoAccountToolStripMenuItem
+            // 
+            this.showOrphanNoAccountToolStripMenuItem.Checked = true;
+            this.showOrphanNoAccountToolStripMenuItem.CheckOnClick = true;
+            this.showOrphanNoAccountToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showOrphanNoAccountToolStripMenuItem.Name = "showOrphanNoAccountToolStripMenuItem";
+            this.showOrphanNoAccountToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
+            this.showOrphanNoAccountToolStripMenuItem.Text = "Show Orphan (No account)";
+            this.showOrphanNoAccountToolStripMenuItem.ToolTipText = "Shows accounts which have no TShock account";
+            this.showOrphanNoAccountToolStripMenuItem.Click += new System.EventHandler(this.showOrphanNoAccountToolStripMenuItem_Click);
+            // 
+            // showSystemToolStripMenuItem
+            // 
+            this.showSystemToolStripMenuItem.CheckOnClick = true;
+            this.showSystemToolStripMenuItem.Enabled = false;
+            this.showSystemToolStripMenuItem.Name = "showSystemToolStripMenuItem";
+            this.showSystemToolStripMenuItem.Size = new System.Drawing.Size(219, 22);
+            this.showSystemToolStripMenuItem.Text = "Show System Accounts";
+            this.showSystemToolStripMenuItem.ToolTipText = "Shows system (world) accounts";
+            this.showSystemToolStripMenuItem.Click += new System.EventHandler(this.showSystemToolStripMenuItem_Click);
+            // 
+            // clmStatus
+            // 
+            this.clmStatus.Frozen = true;
+            this.clmStatus.HeaderText = "Status";
+            this.clmStatus.Name = "clmStatus";
+            this.clmStatus.ReadOnly = true;
+            this.clmStatus.Width = 60;
+            // 
+            // clmName
+            // 
+            this.clmName.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.clmName.DataPropertyName = "Name";
+            this.clmName.HeaderText = "Name";
+            this.clmName.Name = "clmName";
+            this.clmName.ReadOnly = true;
+            // 
+            // clmBalance
+            // 
+            this.clmBalance.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.clmBalance.DataPropertyName = "Balance";
+            this.clmBalance.HeaderText = "Balance";
+            this.clmBalance.Name = "clmBalance";
+            this.clmBalance.ReadOnly = true;
             // 
             // cAccountManagementWndBindingSource
             // 
@@ -534,6 +633,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.gvTransactions)).EndInit();
             this.ctxAccount.ResumeLayout(false);
             this.ctxTransaction.ResumeLayout(false);
+            this.ctxAccountList.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.cAccountManagementWndBindingSource)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -568,8 +668,6 @@
         private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.SplitContainer splitContainer3;
         private System.Windows.Forms.DataGridView gvAccounts;
-        private System.Windows.Forms.DataGridViewTextBoxColumn clmName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn clmBalance;
         private System.Windows.Forms.ToolStrip toolStrip2;
         private System.Windows.Forms.ToolStripLabel lblSearch;
         private System.Windows.Forms.ToolStripTextBox txtSearch;
@@ -584,5 +682,16 @@
         private System.Windows.Forms.ToolStripButton btnModifyBalance;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
+        private System.Windows.Forms.ContextMenuStrip ctxAccountList;
+        private System.Windows.Forms.ToolStripMenuItem deleteXAccountsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem userDisplayOptionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem showOnlineToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem showOfflineToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem showOrphanNoAccountToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem showSystemToolStripMenuItem;
+        private System.Windows.Forms.DataGridViewTextBoxColumn clmStatus;
+        private System.Windows.Forms.DataGridViewTextBoxColumn clmName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn clmBalance;
     }
 }

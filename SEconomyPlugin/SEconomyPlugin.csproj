@@ -92,6 +92,7 @@
     <Compile Include="Journal\MySQLJournal\MySQLTransactionJournal.cs" />
     <Compile Include="Journal\PendingTransactionEventArgs.cs" />
     <Compile Include="Journal\JournalLoadingPercentChangedEventArgs.cs" />
+    <Compile Include="Journal\PurgeOptions.cs" />
     <Compile Include="Journal\XMLJournal\XmlBankAccount.cs" />
     <Compile Include="Journal\XMLJournal\XmlTransaction.cs" />
     <Compile Include="Journal\JournalTransactionCache.cs" />
@@ -103,6 +104,11 @@
     <Compile Include="Packets\TerrariaPacket.cs" />
     <Compile Include="Packets\UpdateNPC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="SEconomy.cs" />
     <Compile Include="SEconomyPlugin.cs" />
     <Compile Include="WorldEconomy.cs" />
@@ -124,9 +130,15 @@
     <EmbeddedResource Include="Forms\CModifyBalanceWnd.resx">
       <DependentUpon>CModifyBalanceWnd.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Content Include="changes.txt" />
+    <None Include="Resources\arrow-return-180-left.png" />
+    <None Include="Resources\cross-script.png" />
     <EmbeddedResource Include="Lang\%24en-AU.xml" />
     <EmbeddedResource Include="Journal\MySQLJournal\DatabaseScripts\create%241.sql" />
     <Content Include="Permissions.txt" />
