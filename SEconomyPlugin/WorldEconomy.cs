@@ -93,7 +93,7 @@ namespace Wolfje.Plugins.SEconomy {
 		protected void Game_Update(EventArgs args)
 		{
 			foreach (Terraria.NPC npc in Terraria.Main.npc) {
-				if (npc == null || npc.townNPC == true) {
+				if (npc == null || npc.townNPC == true || npc.lifeMax == 0) {
 					continue;
 				}
 
