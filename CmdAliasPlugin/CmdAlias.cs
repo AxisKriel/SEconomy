@@ -183,7 +183,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 				TShockAPI.Command newCommand = new TShockAPI.Command(aliasCmd.Permissions, ChatCommand_AliasExecuted, new string[] {
 					aliasCmd.CommandAlias,
 					"cmdalias." + aliasCmd.CommandAlias
-				}) { AllowServer = true };
+				}) { AllowServer = true, HelpText = aliasCmd.UsageHelpText };
 				TShockAPI.Commands.ChatCommands.Add(newCommand);
 			}
 		}
