@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Newtonsoft.Json;
+using TShockAPI;
 
 namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 	public class Configuration {
@@ -23,14 +24,14 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 				config = JsonConvert.DeserializeObject<Configuration>(fileText);
 			} catch (Exception ex) {
 				if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
-					TShockAPI.Log.ConsoleError("cmdalias configuration: Cannot find file or directory. Creating new one.");
+					TShock.Log.ConsoleError("cmdalias configuration: Cannot find file or directory. Creating new one.");
 
 					config = Configuration.NewSampleConfiguration();
 					config.SaveConfiguration(Path);
 				} else if (ex is System.Security.SecurityException) {
-					TShockAPI.Log.ConsoleError("cmdalias configuration: Access denied reading file " + Path);
+					TShock.Log.ConsoleError("cmdalias configuration: Access denied reading file " + Path);
 				} else {
-					TShockAPI.Log.ConsoleError("cmdalias configuration: error " + ex.ToString());
+					TShock.Log.ConsoleError("cmdalias configuration: error " + ex.ToString());
 				}
 			}
 
@@ -78,7 +79,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 
 				foreach (AliasCommand alias in extraConfig.CommandAliases) {
 					if (config.CommandAliases.FirstOrDefault(i => i.CommandAlias == alias.CommandAlias) != null) {
-						TShockAPI.Log.ConsoleError("aliascmd warning: Duplicate alias {0} in file {1} ignored",
+						TShock.Log.ConsoleError("aliascmd warning: Duplicate alias {0} in file {1} ignored",
 							alias.CommandAlias, System.IO.Path.GetFileName(aliasFile));
 						continue;
 					}
@@ -112,12 +113,12 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 			} catch (Exception ex) {
 
 				if (ex is System.IO.DirectoryNotFoundException) {
-					TShockAPI.Log.ConsoleError("cmdalias config: save directory not found: " + Path);
+					TShock.Log.ConsoleError("cmdalias config: save directory not found: " + Path);
 
 				} else if (ex is UnauthorizedAccessException || ex is System.Security.SecurityException) {
-					TShockAPI.Log.ConsoleError("cmdalias config: Access is denied to Vault config: " + Path);
+					TShock.Log.ConsoleError("cmdalias config: Access is denied to Vault config: " + Path);
 				} else {
-					TShockAPI.Log.ConsoleError("cmdalias config: Error reading file: " + Path);
+					TShock.Log.ConsoleError("cmdalias config: Error reading file: " + Path);
 					throw;
 				}
 			}

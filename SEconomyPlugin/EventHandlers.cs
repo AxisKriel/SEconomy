@@ -158,7 +158,7 @@ namespace Wolfje.Plugins.SEconomy {
 
 			if ((account = Parent.GetBankAccount(e.Player)) == null) {
 				if ((account = await Parent.CreatePlayerAccountAsync(e.Player)) == null) {
-					TShockAPI.Log.ConsoleError("seconomy error:  Creating account for {0} failed.", e.Player.Name);
+					TShock.Log.ConsoleError("seconomy error:  Creating account for {0} failed.", e.Player.Name);
 				}
 				return;
 			}
@@ -212,7 +212,7 @@ namespace Wolfje.Plugins.SEconomy {
 				return;
 			}
 
-			TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(27, "seconomy async: error occurred on a task thread: ") + e.Exception.Flatten().ToString());
+			TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(27, "seconomy async: error occurred on a task thread: ") + e.Exception.Flatten().ToString());
 			e.SetObserved();
 		}
 

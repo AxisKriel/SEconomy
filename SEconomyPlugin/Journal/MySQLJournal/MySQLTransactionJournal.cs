@@ -116,7 +116,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 					return null;
 				}
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
+				TShock.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
 				return null;
 			}
 
@@ -185,12 +185,12 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 					return;
 				}
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError("seconomy mysql: DeleteBankAccount failed: {0}",
+				TShock.Log.ConsoleError("seconomy mysql: DeleteBankAccount failed: {0}",
 					ex.Message);
 			}
 
 			if (affected != 1) {
-				TShockAPI.Log.ConsoleError("seconomy mysql: DeleteBankAccount affected {0} rows where it should have only been 1.",
+				TShock.Log.ConsoleError("seconomy mysql: DeleteBankAccount affected {0} rows where it should have only been 1.",
 					affected);
 				return;
 			}
@@ -272,10 +272,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 					break;
 				}
 
-				TShockAPI.Log.ConsoleInfo("The database {0} on MySQL server {1} does not exist or cannot be accessed.", 
+				TShock.Log.ConsoleInfo("The database {0} on MySQL server {1} does not exist or cannot be accessed.", 
 					sqlProperties.DbName, 
 					sqlProperties.DbHost);
-				TShockAPI.Log.ConsoleInfo("If the schema does exist, make sure the SQL user has access to it.");
+				TShock.Log.ConsoleInfo("If the schema does exist, make sure the SQL user has access to it.");
 
 				Console.Write("New database {0} on MySQL Server {1}, retry or cancel? (n/r/c) ", 
 					sqlProperties.DbName, 
@@ -303,10 +303,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			try {
 				CreateDatabase();
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError(" Your SEconomy database does not exist and it couldn't be created.");
-				TShockAPI.Log.ConsoleError(" Check your SQL server is on, and the credentials you supplied have");
-				TShockAPI.Log.ConsoleError(" permissions to CREATE DATABASE.");
-				TShockAPI.Log.ConsoleError(" The error was: {0}", ex.Message);
+				TShock.Log.ConsoleError(" Your SEconomy database does not exist and it couldn't be created.");
+				TShock.Log.ConsoleError(" Check your SQL server is on, and the credentials you supplied have");
+				TShock.Log.ConsoleError(" permissions to CREATE DATABASE.");
+				TShock.Log.ConsoleError(" The error was: {0}", ex.Message);
 				throw;
 			}
 		}
@@ -381,7 +381,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				Console.WriteLine("\r\n");
 				ConsoleEx.WriteLineColour(ConsoleColor.Cyan, " Journal clean: {0} accounts, {1} transactions", BankAccounts.Count(), tranCount);
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: db error in LoadJournal: " + ex.Message);
+				TShock.Log.ConsoleError(" seconomy mysql: db error in LoadJournal: " + ex.Message);
 				throw;
 			}
 		}
@@ -398,12 +398,12 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 		public async Task SquashJournalAsync()
 		{
-			TShockAPI.Log.ConsoleInfo("seconomy mysql: squashing accounts.");
+			TShock.Log.ConsoleInfo("seconomy mysql: squashing accounts.");
 			if (await Connection.QueryAsync("CALL seconomy_squash();") < 0) {
-				TShockAPI.Log.ConsoleError("seconomy mysql: squashing failed.");
+				TShock.Log.ConsoleError("seconomy mysql: squashing failed.");
 			}
 
-			TShockAPI.Log.ConsoleInfo("seconomy mysql: re-syncing online accounts");
+			TShock.Log.ConsoleInfo("seconomy mysql: re-syncing online accounts");
 			foreach (TSPlayer player in TShockAPI.TShock.Players) {
 				IBankAccount account = null;
 				if (player == null
@@ -415,7 +415,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				await account.SyncBalanceAsync();
 			}
 
-			TShockAPI.Log.ConsoleInfo("seconomy mysql: squash complete.");
+			TShock.Log.ConsoleInfo("seconomy mysql: squash complete.");
 		}
 
 		bool TransferMaySucceed(IBankAccount FromAccount, IBankAccount ToAccount, Money MoneyNeeded, Journal.BankAccountTransferOptions Options)
@@ -452,7 +452,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				SQLTransaction.Connection.QueryIdentityTransaction(SQLTransaction, query, out idenitity, trans.BankAccountFK, 
 					(long)trans.Amount, trans.Message, (int)BankAccountTransactionFlags.FundsAvailable, 0, DateTime.UtcNow);
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in BeginSourceTransaction: " + ex.Message);
+				TShock.Log.ConsoleError(" seconomy mysql: Database error in BeginSourceTransaction: " + ex.Message);
 				return null;
 			}
 
@@ -485,7 +485,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				SQLTransaction.Connection.QueryIdentityTransaction(SQLTransaction, query, out identity, trans.BankAccountFK, (long)trans.Amount, trans.Message,
 					(int)BankAccountTransactionFlags.FundsAvailable, 0, DateTime.UtcNow);
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in FinishEndTransaction: " + ex.Message);
+				TShock.Log.ConsoleError(" seconomy mysql: Database error in FinishEndTransaction: " + ex.Message);
 				return null;
 			}
 
@@ -502,14 +502,14 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 			try {
 				if ((updated = SQLTransaction.Connection.QueryTransaction(SQLTransaction, query, SourceBankTransactionK, DestBankTransactionK)) != 1) {
-					TShockAPI.Log.ConsoleError(" seconomy mysql:  Error in BindTransactions: updated row count was " + updated);
+					TShock.Log.ConsoleError(" seconomy mysql:  Error in BindTransactions: updated row count was " + updated);
 				}
 
 				if ((updated = SQLTransaction.Connection.QueryTransaction(SQLTransaction, query, DestBankTransactionK, SourceBankTransactionK)) != 1) {
-					TShockAPI.Log.ConsoleError(" seconomy mysql:  Error in BindTransactions: updated row count was " + updated);
+					TShock.Log.ConsoleError(" seconomy mysql:  Error in BindTransactions: updated row count was " + updated);
 				}
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in BindTransactions: " + ex.Message);
+				TShock.Log.ConsoleError(" seconomy mysql: Database error in BindTransactions: " + ex.Message);
 				return;
 			}
 		}
@@ -538,20 +538,20 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 			}
 
 			if ((conn = Connection) == null) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: Cannot connect to the SQL server");
+				TShock.Log.ConsoleError(" seconomy mysql: Cannot connect to the SQL server");
 				return args;
 			}
 
 			conn.Open();
 
 			if ((accountCount = Connection.QueryScalar<long>(accountVerifyQuery, FromAccount.BankAccountK)) != 1) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
+				TShock.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
 				conn.Dispose();
 				return args;
 			}
 
 			if ((accountCount = Connection.QueryScalar<long>(accountVerifyQuery, ToAccount.BankAccountK)) != 1) {
-				TShockAPI.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
+				TShock.Log.ConsoleError(" seconomy mysql: Source account " + FromAccount.BankAccountK + " does not exist.");
 				conn.Dispose();
 				return args;
 			}
@@ -589,10 +589,10 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 					try {
 						sqlTrans.Rollback();
 					} catch {
-						TShockAPI.Log.ConsoleError(" seconomy mysql: error in rollback:" + ex.ToString());
+						TShock.Log.ConsoleError(" seconomy mysql: error in rollback:" + ex.ToString());
 					}
 				}
-				TShockAPI.Log.ConsoleError(" seconomy mysql: database error in transfer:" + ex.ToString());
+				TShock.Log.ConsoleError(" seconomy mysql: database error in transfer:" + ex.ToString());
 				args.Exception = ex;
 				return args;
 			} finally {
@@ -611,7 +611,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 
 			if (SEconomyInstance.Configuration.EnableProfiler == true) {
 				sw.Stop();
-				TShockAPI.Log.ConsoleInfo("seconomy mysql: transfer took {0} ms", sw.ElapsedMilliseconds);
+				TShock.Log.ConsoleInfo("seconomy mysql: transfer took {0} ms", sw.ElapsedMilliseconds);
 			}
 
 			return args;
@@ -658,11 +658,11 @@ namespace Wolfje.Plugins.SEconomy.Journal.MySQLJournal {
 				bool accountEnabled = (worldAccount.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled;
 
 				if (!accountEnabled) {
-					TShockAPI.Log.ConsoleError(string.Format(SEconomyPlugin.Locale.StringOrDefault(60, "The world account for world {0} is disabled.  Currency will not work for this game."), Terraria.Main.worldName));
+					TShock.Log.ConsoleError(string.Format(SEconomyPlugin.Locale.StringOrDefault(60, "The world account for world {0} is disabled.  Currency will not work for this game."), Terraria.Main.worldName));
 					return null;
 				}
 			} else {
-				TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(61, "There was an error loading the bank account for this world.  Currency will not work for this game."));
+				TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(61, "There was an error loading the bank account for this world.  Currency will not work for this game."));
 			}
 
 			return worldAccount;

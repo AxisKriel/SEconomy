@@ -15,6 +15,7 @@ using Wolfje.Plugins.SEconomy.Configuration;
 using Wolfje.Plugins.SEconomy.Extensions;
 using Wolfje.Plugins.SEconomy.Journal.XMLJournal;
 using System.Text.RegularExpressions;
+using TShockAPI;
 
 namespace xml2sql {
 	public class Program {
@@ -172,7 +173,7 @@ namespace xml2sql {
 					Connection.QueryIdentity(query, out id, account.UserAccountName, account.WorldID,
 						(int)account.Flags, 0, account.Description, account.BankAccountK);
 				} catch (Exception ex) {
-					TShockAPI.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
+					TShock.Log.ConsoleError(" seconomy mysql: sql error adding bank account: " + ex.ToString());
 					continue;
 				}
 
@@ -192,7 +193,7 @@ namespace xml2sql {
 							oldNewTransactions[transaction.BankAccountTransactionK] = tranId;
 						}
 					} catch (Exception ex) {
-						TShockAPI.Log.ConsoleError(" seconomy mysql: Database error in BeginSourceTransaction: " + ex.Message);
+						TShock.Log.ConsoleError(" seconomy mysql: Database error in BeginSourceTransaction: " + ex.Message);
 						continue;
 					}
 				}

@@ -124,11 +124,11 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
                     bool accountEnabled = (worldAccount.Flags & Journal.BankAccountFlags.Enabled) == Journal.BankAccountFlags.Enabled;
 
                     if (!accountEnabled) {
-                        TShockAPI.Log.ConsoleError(string.Format(SEconomyPlugin.Locale.StringOrDefault(60, "The world account for world {0} is disabled.  Currency will not work for this game."), Terraria.Main.worldName));
+                        TShock.Log.ConsoleError(string.Format(SEconomyPlugin.Locale.StringOrDefault(60, "The world account for world {0} is disabled.  Currency will not work for this game."), Terraria.Main.worldName));
                         return null;
                     }
                 } else {
-                    TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(61, "There was an error loading the bank account for this world.  Currency will not work for this game."));
+                    TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(61, "There was an error loading the bank account for this world.  Currency will not work for this game."));
                 }
             }
 
@@ -348,7 +348,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
                             File.Move(path, path + ".bak");
                         }
                     } catch {
-                        TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(65, "seconomy backup: Cannot copy {0} to {1}, shadow backups will not work!"), path, path + ".bak");
+                        TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(65, "seconomy backup: Cannot copy {0} to {1}, shadow backups will not work!"), path, path + ".bak");
                     }
 
                     Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(66, "seconomy journal: writing to disk"));
@@ -364,13 +364,13 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
                             }
                         }
                     } catch {
-                        TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(67, "seconomy journal: Saving your journal failed!"));
+                        TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(67, "seconomy journal: Saving your journal failed!"));
 
                         if (File.Exists(path + ".tmp") == true) {
                             try {
                                 File.Delete(path + ".tmp");
                             } catch {
-                                TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(68, "seconomy journal: Cannot delete temporary file!"));
+                                TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(68, "seconomy journal: Cannot delete temporary file!"));
                                 throw;
                             }
                         }
@@ -380,7 +380,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
                         try {
                             File.Move(path + ".tmp", path);
                         } catch {
-                            TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(68, "seconomy journal: Cannot delete temporary file!"));
+                            TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(68, "seconomy journal: Cannot delete temporary file!"));
                             throw;
                         }
                     }
@@ -420,21 +420,21 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
                     Console.ForegroundColor = ConsoleColor.DarkCyan;
 
                     if (ex is System.IO.FileNotFoundException || ex is System.IO.DirectoryNotFoundException) {
-                        TShockAPI.Log.ConsoleInfo(" * It appears you do not have a journal yet, one will be created for you.");
+                        TShock.Log.ConsoleInfo(" * It appears you do not have a journal yet, one will be created for you.");
                         SaveJournal();
                         //yes there are valid uses for goto, don't judge me fool
                         goto initPoint;
                     } else if (ex is System.Security.SecurityException) {
-                        TShockAPI.Log.ConsoleError(" * Access denied to the journal file.  Check permissions.");
+                        TShock.Log.ConsoleError(" * Access denied to the journal file.  Check permissions.");
                     } else {
-                        TShockAPI.Log.ConsoleError(" * Loading your journal failed: " + ex.Message);
+                        TShock.Log.ConsoleError(" * Loading your journal failed: " + ex.Message);
                     }
                 }
 
                 try {
                     uncompressedData = GZipDecompress(fileData);
                 } catch {
-                    TShockAPI.Log.ConsoleError(" * Decompression failed.");
+                    TShock.Log.ConsoleError(" * Decompression failed.");
                     return false;
                 }
 
@@ -536,7 +536,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
                         int removedAccounts = bankAccounts.RemoveAll(pred => duplicateAccounts.Contains(pred.BankAccountK));
 
                         if (removedAccounts > 0) {
-                            TShockAPI.Log.Warn("seconomy journal: removed " + removedAccounts + " accounts with duplicate IDs.");
+                            TShock.Log.Warn("seconomy journal: removed " + removedAccounts + " accounts with duplicate IDs.");
                         }
 
                         //transactions in the old schema.
@@ -628,7 +628,7 @@ namespace Wolfje.Plugins.SEconomy.Journal.XMLJournal {
                     }
                 } catch (Exception ex) {
                     ConsoleEx.WriteAtEnd(2, ConsoleColor.Red, "[{0}]\r\n", SEconomyPlugin.Locale.StringOrDefault(79, "corrupt"));
-                    TShockAPI.Log.ConsoleError(ex.ToString());
+                    TShock.Log.ConsoleError(ex.ToString());
                     Console.WriteLine(SEconomyPlugin.Locale.StringOrDefault(80, "Your transaction journal appears to be corrupt and transactions have been lost.\n\nYou will start with a clean journal.\nYour old journal file has been move to SEconomy.journal.xml.gz.corrupt"));
                     File.Move(path, path + "." + DateTime.Now.ToFileTime().ToString() + ".corrupt");
 

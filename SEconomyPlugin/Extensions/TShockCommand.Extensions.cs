@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using TShockAPI;
 
 namespace Wolfje.Plugins.SEconomy {
 
@@ -36,7 +37,7 @@ namespace Wolfje.Plugins.SEconomy {
 				cmdDelegateRef(new TShockAPI.CommandArgs(msg, ply, parms));
 			} catch (Exception e) {
 				ply.SendErrorMessage("Command failed, check logs for more details.");
-				TShockAPI.Log.Error(e.ToString());
+				TShock.Log.Error(e.ToString());
 			}
 
 			return true;

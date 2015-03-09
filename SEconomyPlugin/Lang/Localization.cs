@@ -26,6 +26,7 @@ using System.Xml.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Reflection;
+using TShockAPI;
 
 namespace Wolfje.Plugins.SEconomy.Lang {
 	public class Localization {
@@ -38,7 +39,7 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 			this.Locale = Locale;
 
 			if (Load() < 0) {
-				TShockAPI.Log.ConsoleError("SEconomy language loading failed.");
+				TShock.Log.ConsoleError("SEconomy language loading failed.");
 			}
 		}
 
@@ -97,14 +98,14 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 			}
 
 			if (File.Exists(localePath) == false) {
-				TShockAPI.Log.ConsoleError("seconomy locale: Language for locale {0} doesn't exist.", Locale);
+				TShock.Log.ConsoleError("seconomy locale: Language for locale {0} doesn't exist.", Locale);
 				return -1;
 			}
 
 			try {
 				localeDoc = XDocument.Load(localePath);
 			} catch {
-				TShockAPI.Log.ConsoleError("Could not load language {0}.", Locale);
+				TShock.Log.ConsoleError("Could not load language {0}.", Locale);
 				return -1;
 			}
 

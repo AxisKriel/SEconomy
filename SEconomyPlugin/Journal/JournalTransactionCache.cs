@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TShockAPI;
 
 namespace Wolfje.Plugins.SEconomy.Journal {
 	public class JournalTransactionCache : IDisposable {
@@ -96,11 +97,11 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 					BankTransferEventArgs transfer = await sourceAccount.TransferToAsync(destAccount, aggregatedFund.Amount, aggregatedFund.Options, messageBuilder.ToString(), messageBuilder.ToString());
 					if (!transfer.TransferSucceeded) {
 						if (transfer.Exception != null) {
-							TShockAPI.Log.ConsoleError(string.Format("seconomy cache: error source={0} dest={1}: {2}", aggregatedFund.SourceBankAccountK, aggregatedFund.DestinationBankAccountK, transfer.Exception));
+							TShock.Log.ConsoleError(string.Format("seconomy cache: error source={0} dest={1}: {2}", aggregatedFund.SourceBankAccountK, aggregatedFund.DestinationBankAccountK, transfer.Exception));
 						}
 					}
 				} else {
-					TShockAPI.Log.ConsoleError(string.Format("seconomy cache: transaction cache has no source or destination. source key={0} dest key={1}", aggregatedFund.SourceBankAccountK, aggregatedFund.DestinationBankAccountK));
+					TShock.Log.ConsoleError(string.Format("seconomy cache: transaction cache has no source or destination. source key={0} dest key={1}", aggregatedFund.SourceBankAccountK, aggregatedFund.DestinationBankAccountK));
 				}
 			}
 		}

@@ -63,8 +63,8 @@ namespace Wolfje.Plugins.SEconomy {
 		public int LoadSEconomy()
 		{
 			if (IsNet45OrNewer() == false) {
-				TShockAPI.Log.ConsoleError("SEconomy requires Microsoft .NET framework 4.5 or later.");
-				TShockAPI.Log.ConsoleError("SEconomy will not run.");
+				TShock.Log.ConsoleError("SEconomy requires Microsoft .NET framework 4.5 or later.");
+				TShock.Log.ConsoleError("SEconomy will not run.");
 				return -1;
 			}
 
@@ -120,7 +120,7 @@ namespace Wolfje.Plugins.SEconomy {
 				                                  Journal.BankAccountFlags.Enabled, 
 				                                  "");
 
-			TShockAPI.Log.ConsoleInfo(string.Format("seconomy: bank account for {0} created.", player.UserAccountName));
+			TShock.Log.ConsoleInfo(string.Format("seconomy: bank account for {0} created.", player.UserAccountName));
 
 			if (Money.TryParse(SEconomyPlugin.Instance.Configuration.StartingMoney, out startingMoney)
 			    && startingMoney > 0) {
@@ -142,12 +142,12 @@ namespace Wolfje.Plugins.SEconomy {
 			IBankAccount account = null;
 
 			if ((WorldAccount = RunningJournal.GetWorldAccount()) == null) {
-				TShockAPI.Log.ConsoleError("seconomy bind:  The journal system did not return a world account.  This is an internal error.");
+				TShock.Log.ConsoleError("seconomy bind:  The journal system did not return a world account.  This is an internal error.");
 				return;
 			}
 
 			await WorldAccount.SyncBalanceAsync();
-			TShockAPI.Log.ConsoleInfo(string.Format(SEconomyPlugin.Locale.StringOrDefault(1, "SEconomy: world account: paid {0} to players."), WorldAccount.Balance.ToLongString()));
+			TShock.Log.ConsoleInfo(string.Format(SEconomyPlugin.Locale.StringOrDefault(1, "SEconomy: world account: paid {0} to players."), WorldAccount.Balance.ToLongString()));
 
 			await Task.Delay(5000);
 			foreach (var player in TShockAPI.TShock.Players) {
@@ -222,7 +222,7 @@ namespace Wolfje.Plugins.SEconomy {
 			try {
 				return RunningJournal.GetBankAccountByName(tsPlayer.UserAccountName);
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError("seconomy error: Error getting bank account for {0}: {1}", 
+				TShock.Log.ConsoleError("seconomy error: Error getting bank account for {0}: {1}", 
 					tsPlayer.Name, ex.Message);
 				return null;
 			}

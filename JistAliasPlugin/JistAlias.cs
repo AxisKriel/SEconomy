@@ -279,7 +279,7 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
 					}
 				} catch (Exception ex) {
 					e.CommandArgs.Player.SendErrorMessage("An error occured in the alias.");
-					TShockAPI.Log.ConsoleError("aliascmd error: {0} tried to execute alias {1} which failed with error {2}: {3}",
+					TShock.Log.ConsoleError("aliascmd error: {0} tried to execute alias {1} which failed with error {2}: {3}",
 						e.CommandArgs.Player.Name,
 						e.CommandIdentifier,
 						ex.Message,

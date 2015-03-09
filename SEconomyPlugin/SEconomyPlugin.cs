@@ -39,9 +39,9 @@ namespace Wolfje.Plugins.SEconomy {
 	/// 
 	/// Copyright (C) Tyler Watson, 2013-2014.
 	/// 
-	/// API Version 1.16
+	/// API Version 1.17
 	/// </summary>
-	[ApiVersion(1, 16)]
+	[ApiVersion(1, 17)]
 	public class SEconomyPlugin : TerrariaPlugin {
 		public static Lang.Localization Locale { get; private set; }
 
@@ -110,7 +110,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 				}
 			} catch {
 				Instance = null;
-				TShockAPI.Log.ConsoleError(genericErrorMessage); 
+				TShock.Log.ConsoleError(genericErrorMessage); 
 			}
 		}
 
@@ -214,7 +214,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 							RaiseLoadedEvent();
 						} catch {
 							Instance = null;
-							TShockAPI.Log.ConsoleError(genericErrorMessage);
+							TShock.Log.ConsoleError(genericErrorMessage);
 							throw;
 						}
 					});
@@ -256,7 +256,7 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 						} catch {
 							RaiseUnloadedEvent();
 							Instance = null;
-							TShockAPI.Log.ConsoleError(genericErrorMessage);
+							TShock.Log.ConsoleError(genericErrorMessage);
 							throw;
 						}
 					});

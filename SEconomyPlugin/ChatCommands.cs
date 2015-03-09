@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TShockAPI;
 using TShockAPI.Extensions;
 using Wolfje.Plugins.SEconomy.Journal;
 
@@ -127,7 +128,7 @@ namespace Wolfje.Plugins.SEconomy {
 					if (args.Player is TShockAPI.TSServerPlayer) {
 						Thread t = new Thread(() => {
 							Forms.CAccountManagementWnd wnd = new Forms.CAccountManagementWnd(Parent);
-							TShockAPI.Log.ConsoleInfo(SEconomyPlugin.Locale.StringOrDefault(47, "seconomy mgr: opening bank manager window"));
+							TShock.Log.ConsoleInfo(SEconomyPlugin.Locale.StringOrDefault(47, "seconomy mgr: opening bank manager window"));
 
 							//writing the journal is not possible when you're fucking with it in the manager
 							//last thing you want is for half baked changes to be pushed to disk
@@ -136,11 +137,11 @@ namespace Wolfje.Plugins.SEconomy {
 							try {
 								wnd.ShowDialog();
 							} catch (Exception ex) {
-								TShockAPI.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(48, "seconomy mgr: Window closed because it crashed: ") + ex.ToString());
+								TShock.Log.ConsoleError(SEconomyPlugin.Locale.StringOrDefault(48, "seconomy mgr: Window closed because it crashed: ") + ex.ToString());
 							}
 
 							Parent.RunningJournal.BackupsEnabled = true;
-							TShockAPI.Log.ConsoleInfo(SEconomyPlugin.Locale.StringOrDefault(49, "seconomy management: window closed"));
+							TShock.Log.ConsoleInfo(SEconomyPlugin.Locale.StringOrDefault(49, "seconomy management: window closed"));
 						});
 
 						t.SetApartmentState(ApartmentState.STA);
