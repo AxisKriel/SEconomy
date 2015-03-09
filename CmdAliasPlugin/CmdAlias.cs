@@ -52,7 +52,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 					args.Player.SendInfoMessage("aliascmd: reloading complete.");
 				} catch (Exception ex) {
 					args.Player.SendErrorMessage("aliascmd: reload failed.  You need to check the server console to find out what went wrong.");
-					TShockAPI.Log.ConsoleError("aliascmd reload: Cannot load configuration: {0}", ex.Message);
+					TShock.Log.ConsoleError("aliascmd reload: Cannot load configuration: {0}", ex.Message);
 				}
 
 			} else {
@@ -66,7 +66,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 		protected async Task ReloadConfigAfterDelayAsync(int DelaySeconds)
 		{
 			await Task.Delay(DelaySeconds * 1000);
-			TShockAPI.Log.ConsoleInfo("AliasCmd: reloading config.");
+			TShock.Log.ConsoleInfo("AliasCmd: reloading config.");
 
 			try {
 				Configuration reloadedConfig = Configuration.LoadConfigurationFromFile("tshock" + System.IO.Path.DirectorySeparatorChar + "SEconomy" + System.IO.Path.DirectorySeparatorChar + "AliasCmd.config.json");
@@ -75,11 +75,11 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 				ParseCommands();
 
 			} catch (Exception ex) {
-				TShockAPI.Log.ConsoleError("aliascmd: Your new config could not be loaded, fix any problems and save the file.  Your old configuration is in effect until this is fixed. \r\n\r\n" + ex.ToString());
+				TShock.Log.ConsoleError("aliascmd: Your new config could not be loaded, fix any problems and save the file.  Your old configuration is in effect until this is fixed. \r\n\r\n" + ex.ToString());
 				throw;
 			}
 
-			TShockAPI.Log.ConsoleInfo("AliasCmd: config reload done.");
+			TShock.Log.ConsoleInfo("AliasCmd: config reload done.");
 		}
 
 		internal void PopulateCooldownList(KeyValuePair<string, AliasCommand> cooldownReference, TimeSpan? customValue = null)
@@ -168,7 +168,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 					e.CommandArgs.Player.SendErrorMessage("Your payment failed.");
 				} catch (Exception ex) {
 					e.CommandArgs.Player.SendErrorMessage("An error occured in the alias.");
-					TShockAPI.Log.ConsoleError("aliascmd error: {0} tried to execute alias {1} which failed with error {2}: {3}", e.CommandArgs.Player.Name, e.CommandIdentifier, ex.Message, ex.ToString());
+					TShock.Log.ConsoleError("aliascmd error: {0} tried to execute alias {1} which failed with error {2}: {3}", e.CommandArgs.Player.Name, e.CommandIdentifier, ex.Message, ex.ToString());
 					return;
 				}
 			}
@@ -284,7 +284,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 								mangledString = mangledString.Replace(match.ToString(), randomGenerator.Next(randomFrom, randomTo).ToString());
 							}
 						} else {
-							TShockAPI.Log.ConsoleError(match.ToString() + " has some stupid shit in it, have a look at your AliasCmd config file.");
+							TShock.Log.ConsoleError(match.ToString() + " has some stupid shit in it, have a look at your AliasCmd config file.");
 							mangledString = mangledString.Replace(match.ToString(), "");
 						}
 					}
@@ -331,7 +331,7 @@ namespace Wolfje.Plugins.SEconomy.CmdAliasModule {
 							player.PermissionlessInvoke(mangledString);
 						}
 					} else {
-						TShockAPI.Log.ConsoleError(string.Format("cmdalias {0}: calling yourself in an alias will cause an infinite loop. Ignoring.", alias.CommandAlias));
+						TShock.Log.ConsoleError(string.Format("cmdalias {0}: calling yourself in an alias will cause an infinite loop. Ignoring.", alias.CommandAlias));
 					}
 				} catch {
 					//execute the command disregarding permissions
