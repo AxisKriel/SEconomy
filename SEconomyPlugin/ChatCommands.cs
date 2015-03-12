@@ -187,10 +187,15 @@ namespace Wolfje.Plugins.SEconomy {
 							args.Player.SendErrorMessage(SEconomyPlugin.Locale.StringOrDefault(54, "Cannot find player by the name of {0}."), args.Parameters[1]);
 						} else {
 							if (Money.TryParse(args.Parameters[2], out amount)) {
-
+								if (callerAccount == null) {
+									args.Player.SendErrorMessage("bank pay: Bank account error.");
+									return;
+								}
 								//Instruct the world bank to give the player money.
 								await callerAccount.TransferToAsync(selectedAccount, amount, 
-									Journal.BankAccountTransferOptions.AnnounceToReceiver | Journal.BankAccountTransferOptions.AnnounceToSender | Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer, 
+									Journal.BankAccountTransferOptions.AnnounceToReceiver 
+										| Journal.BankAccountTransferOptions.AnnounceToSender 
+										| Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer, 
 									"",
 									string.Format("SE: tfr: {0} to {1} for {2}", args.Player.Name, args.Parameters[1], amount.ToString()));
 							} else {
