@@ -33,7 +33,7 @@ namespace Wolfje.Plugins.SEconomy.Journal {
 		/// </summary>
 		protected ConcurrentQueue<CachedTransaction> CachedTransactions { get; set; }
 
-		protected readonly System.Timers.Timer UncommittedFundTimer = new System.Timers.Timer(5000);
+		protected readonly System.Timers.Timer UncommittedFundTimer = new System.Timers.Timer(1000);
 
 		public JournalTransactionCache()
 		{

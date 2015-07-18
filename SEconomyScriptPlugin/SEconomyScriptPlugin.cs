@@ -139,6 +139,24 @@ namespace Wolfje.Plugins.SEconomy.SEconomyScriptPlugin {
 			return Money.TryParse(MoneyRep.ToString(), out _money);
 		}
 
+
+		[JavascriptFunction("seconomy_get_offline_account")]
+		public Journal.IBankAccount GetBankAccountOffline(object accountRef)
+		{
+			if (JistPlugin.Instance == null
+				|| SEconomyPlugin.Instance == null) {
+				return null;
+			}
+
+			if (accountRef is double) {
+				return SEconomyPlugin.Instance.RunningJournal.GetBankAccount(Convert.ToInt64((double)accountRef));
+			} else if (accountRef is string) {
+				return SEconomyPlugin.Instance.RunningJournal.GetBankAccountByName(accountRef as string);
+			} else {
+				return null;
+			}
+		}
+
 		/// <summary>
 		/// Returns a bank account from a player based on an input object.
 		/// </summary>

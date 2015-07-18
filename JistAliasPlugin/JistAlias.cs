@@ -127,6 +127,8 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule {
 				AllowServer = allowServer
 			};
 
+			newCommand.DoLog = alias.Silent == false;
+
 			TShockAPI.Commands.ChatCommands.RemoveAll(i => i.Names.Contains("jistalias." + alias.CommandAlias));
 			TShockAPI.Commands.ChatCommands.Add(newCommand);
 			jsAliases.RemoveAll(i => i.CommandAlias == alias.CommandAlias);

@@ -69,11 +69,50 @@ namespace Wolfje.Plugins.SEconomy {
 			sender = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == e.SenderAccount.UserAccountName);
 			receiver = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.UserAccountName == e.ReceiverAccount.UserAccountName);
 
+
+			
+
+
+		
+
+			if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver && e.ReceiverAccount != null && receiver != null) {
+				bool gained = (e.Amount > 0 && (e.TransferOptions & BankAccountTransferOptions.IsPayment) == BankAccountTransferOptions.None);
+
+				string message = string.Format("{5}SEconomy\r\n{0}{1}\r\n{2}\r\nBal: {3}{4}",
+				(gained ? "+" : "-"), e.Amount.ToString(),
+				"for " + e.TransactionMessage,
+				e.ReceiverAccount.Balance.ToString(),
+				RepeatLineBreaks(50),
+				RepeatLineBreaks(11));
+
+				receiver.SendData(PacketTypes.Status, message, 0);
+			}
+
+			if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToSender) == Journal.BankAccountTransferOptions.AnnounceToSender && sender != null) {
+				bool gained = (e.Amount > 0 && (e.TransferOptions & BankAccountTransferOptions.IsPayment) == BankAccountTransferOptions.None);
+
+				string message = string.Format("{5}SEconomy\r\n{0}{1}\r\n{2}\r\nBal: {3}{4}",
+				(gained ? "+" : "-"), e.Amount.ToString(),
+				"for " + e.TransactionMessage,
+				e.SenderAccount.Balance.ToString(),
+				RepeatLineBreaks(50),
+				RepeatLineBreaks(11));
+
+				sender.SendData(PacketTypes.Status, message, 0); ;
+			}
+
+
+			return;
+
 			if ((e.TransferOptions & Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) == Journal.BankAccountTransferOptions.IsPlayerToPlayerTransfer) {
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver && e.ReceiverAccount != null && receiver != null) {
-					receiver.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(16, "You {3} {0} from {1}. Transaction # {2}"), e.Amount.ToLongString(), 
-						sender != null ? sender.Name : SEconomyPlugin.Locale.StringOrDefault(17, "The server"), e.TransactionID, 
-						e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(18, "received") : SEconomyPlugin.Locale.StringOrDefault(19, "sent")), Color.Orange);
+					//string message = string.Format(SEconomyPlugin.Locale.StringOrDefault(16, "You {3} {0} from {1}. Transaction # {2}"), e.Amount.ToLongString(), 
+					//	sender != null ? sender.Name : SEconomyPlugin.Locale.StringOrDefault(17, "The server"), e.TransactionID, 
+					//	e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(18, "received") : SEconomyPlugin.Locale.StringOrDefault(19, "sent"));
+
+					//receiver.SendData(PacketTypes.Status, message, 50);
+
+				//	receiver.SendMessage(), Color.Orange);
 				}
 				if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToSender) == Journal.BankAccountTransferOptions.AnnounceToSender && sender != null) {
 					sender.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(16, "You {3} {0} from {1}. Transaction # {2}"), e.Amount.ToLongString(), receiver.Name, e.TransactionID,
@@ -102,12 +141,32 @@ namespace Wolfje.Plugins.SEconomy {
 					}
 
 					if ((e.TransferOptions & Journal.BankAccountTransferOptions.AnnounceToReceiver) == Journal.BankAccountTransferOptions.AnnounceToReceiver && receiver != null) {
-						receiver.SendMessage(string.Format(SEconomyPlugin.Locale.StringOrDefault(20, "You {0} {1}{2}"), e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(24, "gained")
-							: SEconomyPlugin.Locale.StringOrDefault(23, "lost"), e.Amount.ToLongString(), 
-							!string.IsNullOrEmpty(e.TransactionMessage) ? SEconomyPlugin.Locale.StringOrDefault(25, " for ") + e.TransactionMessage : ""), Color.Orange);
+						//string message = string.Format(SEconomyPlugin.Locale.StringOrDefault(20, "You {0} {1}{2}"), e.Amount > 0 ? SEconomyPlugin.Locale.StringOrDefault(24, "gained")
+						//	: SEconomyPlugin.Locale.StringOrDefault(23, "lost"), e.Amount.ToLongString(), 
+						//	!string.IsNullOrEmpty(e.TransactionMessage) ? SEconomyPlugin.Locale.StringOrDefault(25, " for ") + e.TransactionMessage : "");
+
+
+						//string message = string.Format("SEconomy\r\n{0}{1}\r\n{2}\r\nBal: {3}{4}", 
+						//	(e.Amount > 0 ? "+" : "-"), e.Amount.ToString(), 
+						//	e.TransactionMessage, 
+						//	e.ReceiverAccount.Balance.ToString(), 
+						//	RepeatLineBreaks(50));
+
+						//receiver.SendData(PacketTypes.Status, message, 0);
+	//				receiver.SendMessage(), Color.Orange);
 					}
 				}
 			}
+		}
+
+		protected string RepeatLineBreaks(int number)
+		{
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < number; i++) {
+				sb.Append("\r\n");
+			}
+
+			return sb.ToString();
 		}
 
 		/// <summary>

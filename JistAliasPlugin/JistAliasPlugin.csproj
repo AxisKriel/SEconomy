@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -37,9 +37,20 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Wolfje.Plugins.Jist, Version=0.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Wolfje.Plugins.Jist">
       <HintPath>..\..\Jist\bin\Debug\Wolfje.Plugins.Jist.dll</HintPath>
+    </Reference>
+    <Reference Include="TShockAPI">
+      <HintPath>..\..\ServerInstance4.2\ServerPlugins\TShockAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="TerrariaServer">
+      <HintPath>..\..\ServerInstance4.2\TerrariaServer.exe</HintPath>
+    </Reference>
+    <Reference Include="Wolfje.Plugins.SEconomy.CmdAliasModule">
+      <HintPath>..\..\ServerInstance4.2\ServerPlugins\Wolfje.Plugins.SEconomy.CmdAliasModule.dll</HintPath>
+    </Reference>
+    <Reference Include="Wolfje.Plugins.SEconomy">
+      <HintPath>..\..\ServerInstance4.2\ServerPlugins\Wolfje.Plugins.SEconomy.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -48,24 +59,6 @@
     <Compile Include="JistAliasPlugin.cs" />
     <Compile Include="JScriptAliasCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CmdAliasPlugin\CmdAliasPlugin.csproj">
-      <Project>{c8da7e2b-b4b7-44c6-812d-310853dd0910}</Project>
-      <Name>CmdAliasPlugin</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\References\TShock\TerrariaServerAPI\TerrariaAPI-Server.csproj">
-      <Project>{549a7941-d9c9-4544-bac8-d9eeeab4d777}</Project>
-      <Name>TerrariaAPI-Server</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\References\TShock\TShockAPI\TShockAPI.csproj">
-      <Project>{49606449-072b-4cf5-8088-aa49da586694}</Project>
-      <Name>TShockAPI</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SEconomyPlugin\SEconomyPlugin.csproj">
-      <Project>{a3dfc107-09d3-4bc4-be73-ce7d1cc98495}</Project>
-      <Name>SEconomyPlugin</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

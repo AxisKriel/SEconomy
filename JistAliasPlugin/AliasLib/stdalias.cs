@@ -59,6 +59,28 @@ namespace Wolfje.Plugins.SEconomy.JistAliasModule.AliasLib {
 			return true;
 		}
 
+		[JavascriptFunction("acmd_alias_create_silent")]
+		public bool CreateAliasSilent(string AliasName, string Cost, int CooldownSeconds, string Permissions, JsValue func)
+		{
+			try {
+				JistAliasModule.JScriptAliasCommand jAlias = new JistAliasModule.JScriptAliasCommand() {
+					CommandAlias = AliasName as string,
+					CooldownSeconds = Convert.ToInt32(CooldownSeconds),
+					Cost = Cost as string,
+					Permissions = Permissions as string,
+					func = (Jint.Native.JsValue)func,
+					Silent = true
+				};
+
+				aliasEngine.CreateAlias(jAlias);
+			} catch (Exception ex) {
+				Jist.ScriptLog.ErrorFormat("aliascmd", "CreateAlias failed: " + ex.Message);
+				return false;
+			}
+
+			return true;
+		}
+
 		[JavascriptFunction("acmd_alias_remove")]
 		public bool RemoveAlias(object aliasObject)
 		{

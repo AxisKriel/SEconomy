@@ -1,0 +1,15 @@
+﻿<Properties StartupItem="JistAliasPlugin.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="AliasLib/stdalias.cs">
+    <Files>
+      <File FileName="JScriptAliasCommand.cs" Line="33" Column="18" />
+      <File FileName="JistAliasPlugin.cs" Line="1" Column="1" />
+      <File FileName="AliasLib/stdalias.cs" Line="69" Column="28" />
+      <File FileName="JistAlias.cs" Line="130" Column="20" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
