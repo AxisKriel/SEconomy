@@ -39,9 +39,9 @@ namespace Wolfje.Plugins.SEconomy {
 	/// 
 	/// Copyright (C) Tyler Watson, 2013-2014.
 	/// 
-	/// API Version 1.17
+	/// API Version 1.19
 	/// </summary>
-	[ApiVersion(1, 17)]
+	[ApiVersion(1, 19)]
 	public class SEconomyPlugin : TerrariaPlugin {
 		public static Lang.Localization Locale { get; private set; }
 

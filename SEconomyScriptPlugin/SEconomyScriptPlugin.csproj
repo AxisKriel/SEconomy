@@ -78,6 +78,6 @@
   </Target>
   -->
   <Target Name="AfterBuild">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SolutionDir)\..\ServerInstance4.2\ServerPlugins" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SolutionDir)\..\ServerInstance4.3\ServerPlugins" />
   </Target>
 </Project>

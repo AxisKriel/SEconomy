@@ -9,7 +9,7 @@ using TerrariaApi.Server;
 using Wolfje.Plugins.SEconomy.CmdAliasModule;
 
 namespace Wolfje.Plugins.SEconomy.JistAliasModule {
-	[ApiVersion(1, 17)]
+	[ApiVersion(1, 19)]
 	public class JistAliasPlugin : TerrariaPlugin {
 		public override string Author { get { return "Wolfje"; } }
 

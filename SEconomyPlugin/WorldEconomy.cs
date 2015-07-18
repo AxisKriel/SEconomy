@@ -169,7 +169,7 @@ namespace Wolfje.Plugins.SEconomy {
 			if ((NPC.boss && WorldConfiguration.MoneyFromBossEnabled) || (!NPC.boss && WorldConfiguration.MoneyFromNPCEnabled)) {
 				foreach (PlayerDamage damage in playerDamageList) {
 					if (damage.Player == null
-					    || (player = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == damage.Player.whoAmi)) == null
+					    || (player = TShockAPI.TShock.Players.FirstOrDefault(i => i != null && i.Index == damage.Player.whoAmI)) == null
 					    || (account = Parent.GetBankAccount(player)) == null) {
 						continue;
 					}

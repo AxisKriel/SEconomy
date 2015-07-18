@@ -230,7 +230,7 @@ namespace Wolfje.Plugins.SEconomy {
 
 		public IBankAccount GetBankAccount(Terraria.Player player)
 		{
-			return GetBankAccount(player.whoAmi);
+			return GetBankAccount(player.whoAmI);
 		}
 
 		public IBankAccount GetBankAccount(string userAccountName)
