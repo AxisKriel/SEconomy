@@ -39,9 +39,9 @@ namespace Wolfje.Plugins.SEconomy {
 	/// 
 	/// Copyright (C) Tyler Watson, 2013-2014.
 	/// 
-	/// API Version 1.19
+	/// API Version 1.1
 	/// </summary>
-	[ApiVersion(1, 19)]
+	[ApiVersion(1, 20)]
 	public class SEconomyPlugin : TerrariaPlugin {
 		public static Lang.Localization Locale { get; private set; }
 
@@ -112,6 +112,11 @@ You do NOT have to restart the server to issue this command.  Just continue as n
 				Instance = null;
 				TShock.Log.ConsoleError(genericErrorMessage); 
 			}
+
+			ServerApi.Hooks.GameInitialize.Register(this, (init) =>
+			{
+
+			});
 		}
 
 

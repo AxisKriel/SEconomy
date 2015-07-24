@@ -82,7 +82,7 @@ namespace Wolfje.Plugins.SEconomy {
 				(gained ? "+" : "-"), e.Amount.ToString(),
 				"for " + e.TransactionMessage,
 				e.ReceiverAccount.Balance.ToString(),
-				RepeatLineBreaks(50),
+				RepeatLineBreaks(59),
 				RepeatLineBreaks(11));
 
 				receiver.SendData(PacketTypes.Status, message, 0);
@@ -95,7 +95,7 @@ namespace Wolfje.Plugins.SEconomy {
 				(gained ? "+" : "-"), e.Amount.ToString(),
 				"for " + e.TransactionMessage,
 				e.SenderAccount.Balance.ToString(),
-				RepeatLineBreaks(50),
+				RepeatLineBreaks(59),
 				RepeatLineBreaks(11));
 
 				sender.SendData(PacketTypes.Status, message, 0); ;

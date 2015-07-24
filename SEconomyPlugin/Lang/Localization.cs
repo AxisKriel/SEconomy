@@ -39,7 +39,7 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 			this.Locale = Locale;
 
 			if (Load() < 0) {
-				TShock.Log.ConsoleError("SEconomy language loading failed.");
+				//TShock.Log.ConsoleError("SEconomy language loading failed.");
 			}
 		}
 
@@ -98,14 +98,14 @@ namespace Wolfje.Plugins.SEconomy.Lang {
 			}
 
 			if (File.Exists(localePath) == false) {
-				TShock.Log.ConsoleError("seconomy locale: Language for locale {0} doesn't exist.", Locale);
+				//TShock.Log.ConsoleError("seconomy locale: Language for locale {0} doesn't exist.", Locale);
 				return -1;
 			}
 
 			try {
 				localeDoc = XDocument.Load(localePath);
 			} catch {
-				TShock.Log.ConsoleError("Could not load language {0}.", Locale);
+				//TShock.Log.ConsoleError("Could not load language {0}.", Locale);
 				return -1;
 			}
 
